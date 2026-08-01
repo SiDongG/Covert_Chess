@@ -23,7 +23,7 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
           font-family:var(--sans);font-size:15px;-webkit-font-smoothing:antialiased}
-#app{display:flex;flex-direction:column;height:100vh}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
 
 /* offline banner */
 #offline-banner{display:none;background:var(--amber);color:#fff;text-align:center;
@@ -46,7 +46,7 @@ main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
 #chess{width:calc(var(--bsz)+56px);flex-shrink:0;display:flex;flex-direction:column;
        align-items:center;justify-content:center;
        padding:14px 18px;background:var(--surf);border-right:1px solid var(--line);overflow:hidden}
-.prow{width:var(--bsz);display:flex;align-items:center;gap:8px;padding:7px 0}
+.prow{width:100%;max-width:var(--bsz);display:flex;align-items:center;gap:8px;padding:7px 0}
 .prow .av{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line);
           background:var(--surf2);display:flex;align-items:center;justify-content:center;font-size:13px}
 .prow .nm{font-weight:600;font-size:14px;color:var(--ink)}
@@ -54,7 +54,7 @@ main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
 .prow .ck{margin-left:auto;font-family:var(--mono);font-size:13px;color:var(--muted)}
 .prow.active .nm{color:var(--blue)}.prow.active .ck{color:var(--blue);font-weight:700}
 #chessboard{width:var(--bsz)!important}
-#movelist{width:var(--bsz);margin-top:8px;font-family:var(--mono);font-size:12px;
+#movelist{width:100%;max-width:var(--bsz);margin-top:8px;font-family:var(--mono);font-size:12px;
           color:var(--muted);min-height:18px;max-height:52px;overflow-y:auto;line-height:1.85}
 .mn{color:var(--muted)}.mw,.mb{color:var(--ink2)}.mw{margin:0 3px 0 1px}.mb{margin-right:7px}
 
@@ -143,13 +143,13 @@ main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
 </style>
 </head>
 <body>
+<div id="app">
 <div id="offline-banner">
   Demo offline — backend not running.
   To connect: add <code>?backend=wss://YOUR-POD-8000.proxy.runpod.net</code> to this URL.
   <a href="../" style="color:#fff;margin-left:12px;">← Back to project site</a>
 </div>
 
-<div id="app">
   <header>
     <h1>BAM <span class="sep">/</span></h1>
     <span class="sub">covert chess over LLM conversation</span>

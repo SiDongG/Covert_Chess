@@ -220,6 +220,7 @@ details.more .inner { padding: 0 16px 16px; color: var(--ink-2); font-size: 15px
 .author .avatar { width: 62px; height: 62px; border-radius: 50%; background: var(--accent-soft); border: 1px solid var(--accent-brd); color: var(--accent); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 700; font-size: 19px; margin-bottom: 14px; }
 .author h3 { font-size: 17px; }
 .author .role { font-size: 13.5px; color: var(--muted); font-family: var(--font-mono); margin: 2px 0 10px; }
+.author .college-logo { height: 28px; width: auto; max-width: 120px; object-fit: contain; display: block; margin: 8px 0 10px; }
 .author p { font-size: 14px; margin: 0; }
 @media (max-width: 760px) { .author-grid { grid-template-columns: 1fr; } }
 .blind-note { margin-top: 22px; font-size: 14px; color: var(--muted); font-style: italic; }
@@ -247,12 +248,9 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
     <div class="brand">hidden<span>/</span>conversations</div>
     <div class="nav-right">
       <div class="orgs">
-        <img src="./img/harvard-itl.png" alt="Harvard Information Theory Lab"
-             style="height:22px;width:auto;object-fit:contain;opacity:.85"
+        <img src="./img/IT_lab.jpg" alt="Information Theory Lab"
+             style="height:28px;width:auto;object-fit:contain;"
              onerror="this.style.display='none'"/>
-        <span>Harvard ITL</span>
-        <span class="sep">·</span>
-        <span>Georgia Tech</span>
       </div>
       <div class="links">
         <a class="primary" href="./demo/">Demo</a>
@@ -279,10 +277,6 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
 
     <!-- authors on front page -->
     <div class="cover-authors">
-      <img class="org-logo" src="./img/harvard-itl.png"
-           alt="Harvard University — Information Theory Lab"
-           onerror="this.style.display='none'"/>
-      <span class="ca-sep">·</span>
       <span class="ca-names">
         <a href="https://sidongg.github.io/" style="color:var(--ink-2)">Sidong Guo</a>
         <span class="ca-sep"> · </span>[Author Two]<span class="ca-sep"> · </span>[Author Three]
@@ -481,9 +475,27 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
     <p class="eyebrow">authors</p>
     <h2>Who made this</h2>
     <div class="author-grid">
-      <div class="author"><div class="avatar">SG</div><h3><a href="https://sidongg.github.io/" style="color:var(--ink)">Sidong Guo</a></h3><div class="role">Georgia Institute of Technology</div><p>Information theory, covert communication, machine learning security.</p></div>
-      <div class="author"><div class="avatar">A2</div><h3>[Author Two]</h3><div class="role">[affiliation]</div><p>[One line on research focus.]</p></div>
-      <div class="author"><div class="avatar">A3</div><h3>[Author Three]</h3><div class="role">[affiliation]</div><p>[One line on research focus.]</p></div>
+      <div class="author">
+        <div class="avatar">SG</div>
+        <h3><a href="https://sidongg.github.io/" style="color:var(--ink)">Sidong Guo</a></h3>
+        <div class="role">Georgia Institute of Technology</div>
+        <img class="college-logo" src="./img/gtlogo.png" alt="Georgia Tech" onerror="this.style.display='none'"/>
+        <p>Information theory, covert communication, machine learning security.</p>
+      </div>
+      <div class="author">
+        <div class="avatar">A2</div>
+        <h3>[Author Two]</h3>
+        <div class="role">[affiliation]</div>
+        <img class="college-logo" src="./img/seaslogo.png" alt="Harvard SEAS" onerror="this.style.display='none'"/>
+        <p>[One line on research focus.]</p>
+      </div>
+      <div class="author">
+        <div class="avatar">A3</div>
+        <h3>[Author Three]</h3>
+        <div class="role">[affiliation]</div>
+        <img class="college-logo" src="./img/asulogo.png" alt="ASU" onerror="this.style.display='none'"/>
+        <p>[One line on research focus.]</p>
+      </div>
   </div>
 </section>
 
