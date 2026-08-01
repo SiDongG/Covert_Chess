@@ -25,7 +25,39 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
           font-family:var(--sans);font-size:15px;-webkit-font-smoothing:antialiased}
 #app{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
 
-/* connect panel — shown instead of the demo when no backend is reachable */
+/* settings panel */
+#settings-panel{position:fixed;top:66px;right:16px;width:380px;
+                background:var(--surf);border:1px solid var(--line);
+                border-radius:14px;padding:0;z-index:200;
+                box-shadow:0 8px 32px rgba(23,40,77,.18);
+                display:none;overflow:hidden}
+#settings-panel.show{display:block}
+#settings-hdr{display:flex;align-items:center;justify-content:space-between;
+              padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+#settings-title{font-family:var(--disp);font-size:15px;font-weight:600;color:var(--ink)}
+#settings-close{background:none;border:none;font-size:18px;cursor:pointer;
+                color:var(--muted);line-height:1;padding:0 2px}
+#settings-close:hover{color:var(--ink)}
+.settings-section{padding:14px 16px 0}
+.settings-label{font-family:var(--mono);font-size:12px;font-weight:700;
+                color:var(--ink2);letter-spacing:.04em;margin-bottom:3px}
+.settings-sublabel{font-size:12px;color:var(--muted);margin-bottom:7px;line-height:1.4}
+.settings-ta{width:100%;padding:8px 10px;border:1px solid var(--line);
+             border-radius:8px;background:var(--bg);color:var(--ink);
+             font-family:var(--sans);font-size:13px;line-height:1.5;
+             resize:vertical;min-height:72px}
+.settings-ta:focus{outline:none;border-color:var(--blue)}
+#settings-footer{display:flex;align-items:center;gap:8px;padding:14px 16px;
+                 border-top:1px solid var(--line);margin-top:14px}
+#prompts-status{font-family:var(--mono);font-size:12px;color:var(--green);flex:1}
+#reset-prompts-btn{font-family:var(--mono);font-size:12px;padding:5px 11px;
+                   border:1px solid var(--line);border-radius:7px;
+                   background:none;cursor:pointer;color:var(--muted)}
+#reset-prompts-btn:hover{border-color:var(--ink);color:var(--ink)}
+#apply-prompts-btn{font-family:var(--mono);font-size:12px;padding:5px 14px;
+                   border:none;border-radius:7px;background:var(--blue);
+                   color:#F4EFE2;cursor:pointer;font-weight:600}
+#apply-prompts-btn:hover{background:var(--blue2)}
 #connect-panel{display:none;position:fixed;inset:0;z-index:100;
                background:var(--bg);align-items:center;justify-content:center}
 #connect-panel.show{display:flex}
@@ -217,7 +249,34 @@ main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
     <!-- Fix 1: absolute URL so it works from RunPod and GitHub Pages -->
     <a class="hdr-btn" href="https://sidongg.github.io/Covert_Chess/">← Site</a>
     <button class="hdr-btn danger" id="reset-btn">New game</button>
+    <button class="hdr-btn" id="settings-btn" title="Settings">⚙</button>
   </header>
+
+  <!-- settings panel — floats below header on the right -->
+  <div id="settings-panel">
+    <div id="settings-hdr">
+      <span id="settings-title">Settings</span>
+      <button id="settings-close">×</button>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-label">Agent A — mediates your message (LLM 1)</div>
+      <div class="settings-sublabel">Generates cover text from your prompt. Embeds your chess move.</div>
+      <textarea class="settings-ta" id="prompt-a-input" rows="4"></textarea>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-label">Agent B — generates AI response (LLM 2)</div>
+      <div class="settings-sublabel">Receives Agent A's text. Decodes your move, gets engine reply, embeds it.</div>
+      <textarea class="settings-ta" id="prompt-b-input" rows="4"></textarea>
+    </div>
+
+    <div id="settings-footer">
+      <span id="prompts-status"></span>
+      <button id="reset-prompts-btn">Reset defaults</button>
+      <button id="apply-prompts-btn">Apply</button>
+    </div>
+  </div>
   <main>
     <div id="chess">
       <div class="prow" id="prow-b">
@@ -317,7 +376,7 @@ let curExDiv=null, curABub=null, curBBub=null;
 let storedEngineMove=null, storedEngineSan=null;
 let curFromSq=null, curToSq=null, curMoveSan=null, curLegalCount=null;
 // decode result stored for use when Decode button is clicked
-let lastDecodeCorrect=false, lastDecoded=null, lastExpected=null;
+let lastDecodeCorrect=false, lastDecoded=null, lastExpected=null, lastVia='ack';
 
 // ── board ────────────────────────────────────────────────────────────
 function mkBoard(fen){
@@ -430,7 +489,7 @@ function handleMsg(d){
       break;
     case 'decode_result':
       // Store for use when Decode button is clicked
-      lastDecodeCorrect=d.correct; lastDecoded=d.decoded; lastExpected=d.expected;
+      lastDecodeCorrect=d.correct; lastDecoded=d.decoded; lastExpected=d.expected; lastVia=d.via||'ack';
       if(curABub){
         const bf=document.createElement('div');bf.className='bfoot';
         const eb=document.createElement('span');eb.className='emb-badge';
@@ -471,6 +530,15 @@ function handleMsg(d){
       storedEngineMove=storedEngineSan=null;
       lastDecodeCorrect=false;lastDecoded=lastExpected=null;
       busy=false;updateSend();break;
+    case 'prompts_ok':
+      document.getElementById('prompt-a-input').value = d.prompt_a || '';
+      document.getElementById('prompt-b-input').value = d.prompt_b || '';
+      document.getElementById('prompts-status').textContent = '✓ Applied';
+      setTimeout(() => {
+        document.getElementById('prompts-status').textContent = '';
+        document.getElementById('settings-panel').classList.remove('show');
+      }, 1200);
+      break;
     case 'difficulty_ok': status(`Engine: ${document.getElementById('difficulty-select').options[document.getElementById('difficulty-select').selectedIndex].text}`);break;
     case 'error':
       addSys(`Error: ${d.msg}`);busy=false;updateSend();break;
@@ -496,7 +564,8 @@ function addDecodeBtn(bub){
     acc.style.cssText='font-family:var(--mono);font-size:11px;margin-top:5px;';
     if(lastDecodeCorrect){
       acc.style.color='var(--green)';
-      acc.textContent=`✓ Your move decoded correctly (${lastExpected})`;
+      const via = lastVia==='forced' ? ' (forced decode at EOS)' : ' (ACK confirmed)';
+      acc.textContent=`✓ Your move decoded correctly — ${lastExpected}${via}`;
     } else {
       acc.style.color='var(--red)';
       acc.textContent=`✗ Decode error — AI received ${lastDecoded||'?'}, you played ${lastExpected}. Boards may be misaligned.`;
@@ -506,7 +575,53 @@ function addDecodeBtn(bub){
   });
 }
 
-// ── reset button ──────────────────────────────────────────────────────
+// ── settings panel ────────────────────────────────────────────────────
+const DEFAULT_PROMPT_A = (
+  "You are a conversational assistant mediating a user's messages. " +
+  "The user has given you a topic or message — write a natural, casual reply " +
+  "as if you are the user speaking to a friend. " +
+  "Keep it 2-3 sentences, conversational and flowing. " +
+  "Never mention chess, games, or any hidden information."
+);
+const DEFAULT_PROMPT_B = (
+  "You are a friendly AI having a casual conversation. " +
+  "Reply naturally to the message you receive, continuing the topic in a " +
+  "warm, conversational way. Keep it 2-3 sentences. " +
+  "Never mention chess, games, or any hidden information."
+);
+
+function initSettings() {
+  document.getElementById('prompt-a-input').value = DEFAULT_PROMPT_A;
+  document.getElementById('prompt-b-input').value = DEFAULT_PROMPT_B;
+}
+
+document.getElementById('settings-btn').addEventListener('click', () => {
+  const panel = document.getElementById('settings-panel');
+  panel.classList.toggle('show');
+  // Fetch current prompts from server when opening
+  if (panel.classList.contains('show') && ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({type: 'get_prompts'}));
+  }
+});
+
+document.getElementById('settings-close').addEventListener('click', () => {
+  document.getElementById('settings-panel').classList.remove('show');
+});
+
+document.getElementById('apply-prompts-btn').addEventListener('click', () => {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({
+    type:     'set_prompts',
+    prompt_a: document.getElementById('prompt-a-input').value.trim(),
+    prompt_b: document.getElementById('prompt-b-input').value.trim(),
+  }));
+});
+
+document.getElementById('reset-prompts-btn').addEventListener('click', () => {
+  document.getElementById('prompt-a-input').value = DEFAULT_PROMPT_A;
+  document.getElementById('prompt-b-input').value = DEFAULT_PROMPT_B;
+  document.getElementById('prompts-status').textContent = '';
+});
 document.getElementById('reset-btn').addEventListener('click',()=>{
   if(ws&&ws.readyState===WebSocket.OPEN){
     ws.send(JSON.stringify({type:'reset'}));
@@ -575,7 +690,7 @@ function updatePlayerRows(){
 }
 
 window.addEventListener('DOMContentLoaded',()=>{
-  mkBoard(); connect();
+  mkBoard(); connect(); initSettings();
 
   // Connect panel button
   document.getElementById('connect-btn').addEventListener('click', () => {

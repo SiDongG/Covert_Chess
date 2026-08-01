@@ -107,7 +107,18 @@ async def ws_endpoint(websocket: WebSocket, session_id: str) -> None:
             elif t == "reset":
                 session.reset()
                 await send({"type": "reset_ok", "fen": "start", "turn": 0})
-            elif t == "set_difficulty":
+            elif t == "set_prompts":
+                session.set_prompts(
+                    prompt_a=data.get("prompt_a", ""),
+                    prompt_b=data.get("prompt_b", ""),
+                )
+                await send({"type": "prompts_ok",
+                            "prompt_a": session.prompt_a,
+                            "prompt_b": session.prompt_b})
+            elif t == "get_prompts":
+                await send({"type": "prompts_ok",
+                            "prompt_a": session.prompt_a,
+                            "prompt_b": session.prompt_b})
                 level = int(data.get("level", 10))
                 session.chess.set_skill_level(level)
                 await send({"type": "difficulty_ok", "level": level})
