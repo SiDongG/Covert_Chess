@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>BAM — Covert Chess Demo</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+
+<style>
+:root {
+  --bg:#EEE7D6;--surf:#F7F2E7;--surf2:#F0EAD8;
+  --ink:#17284D;--ink2:#47516B;--muted:#8A836C;
+  --line:#DED4BE;--line2:#CFC3A6;
+  --blue:#2A4BD0;--blue2:#4E6BE0;--blue-s:rgba(42,75,208,.09);
+  --green:#2E7D57;--green-s:#E1F2EB;
+  --red:#B4472F;--amber:#A9791F;
+  --mono:"Space Mono",ui-monospace,monospace;
+  --sans:"Inter",system-ui,sans-serif;
+  --disp:"Space Grotesk",system-ui,sans-serif;
+  --bsz:390px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
+          font-family:var(--sans);font-size:15px;-webkit-font-smoothing:antialiased}
+#app{display:flex;flex-direction:column;height:100vh}
+
+/* offline banner */
+#offline-banner{display:none;background:var(--amber);color:#fff;text-align:center;
+                font-family:var(--mono);font-size:12px;padding:8px;flex-shrink:0}
+#offline-banner.show{display:block}
+
+header{display:flex;align-items:center;gap:10px;padding:9px 18px;
+       background:var(--surf);border-bottom:1px solid var(--line);flex-shrink:0}
+header h1{font-family:var(--disp);font-size:17px;font-weight:700;
+          color:var(--ink);letter-spacing:-.02em}
+header .sep{color:var(--blue);font-family:var(--mono)}
+header .sub{font-family:var(--mono);font-size:12px;color:var(--muted)}
+#hstatus{font-family:var(--mono);font-size:12px;color:var(--muted);
+         margin-left:auto;max-width:260px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+#dot{width:8px;height:8px;border-radius:50%;background:var(--red);transition:background .3s}
+#dot.on{background:var(--green)}
+
+main{display:grid;grid-template-columns:calc(var(--bsz)+56px) 1fr;flex:1;min-height:0;overflow:hidden}
+
+#chess{display:flex;flex-direction:column;align-items:center;justify-content:center;
+       padding:14px 18px;background:var(--surf);border-right:1px solid var(--line)}
+.prow{width:var(--bsz);display:flex;align-items:center;gap:8px;padding:7px 0}
+.prow .av{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line);
+          background:var(--surf2);display:flex;align-items:center;justify-content:center;font-size:13px}
+.prow .nm{font-weight:600;font-size:14px;color:var(--ink)}
+.prow .cl{font-family:var(--mono);font-size:11px;color:var(--muted);margin-left:2px}
+.prow .ck{margin-left:auto;font-family:var(--mono);font-size:13px;color:var(--muted)}
+.prow.active .nm{color:var(--blue)}.prow.active .ck{color:var(--blue);font-weight:700}
+#chessboard{width:var(--bsz)!important}
+#movelist{width:var(--bsz);margin-top:8px;font-family:var(--mono);font-size:12px;
+          color:var(--muted);min-height:18px;max-height:52px;overflow-y:auto;line-height:1.85}
+.mn{color:var(--muted)}.mw,.mb{color:var(--ink2)}.mw{margin:0 3px 0 1px}.mb{margin-right:7px}
+
+#chat{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+#flow-strip{display:flex;align-items:center;padding:6px 14px;
+            background:var(--blue-s);border-bottom:1px solid var(--line);
+            font-family:var(--mono);font-size:11px;color:var(--muted);
+            flex-shrink:0;flex-wrap:wrap;gap:4px}
+.fl{display:flex;align-items:center;gap:4px}
+.fl-box{background:var(--surf);border:1px solid var(--line);border-radius:5px;
+        padding:2px 8px;color:var(--ink2);white-space:nowrap}
+.fl-box.you{border-color:var(--blue);color:var(--blue)}
+.fl-box.ai{border-color:var(--green);color:var(--green)}
+.fl-arrow{color:var(--muted);font-size:13px}
+.fl-note{color:var(--muted);font-size:10.5px;font-style:italic}
+
+#msgs{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:16px}
+.exchange{display:flex;flex-direction:column;gap:6px}
+.prompt-label{align-self:flex-end;font-family:var(--mono);font-size:11px;color:var(--muted);
+              padding:0 4px;letter-spacing:.04em;display:flex;align-items:center;gap:5px}
+.prompt-label .pl-text{font-style:italic;color:var(--ink2)}
+.bwrap{display:flex;flex-direction:column;max-width:80%;gap:0}
+.bwrap.a{align-self:flex-end;align-items:flex-end}
+.bwrap.b{align-self:flex-start;align-items:flex-start}
+.blabel{font-family:var(--mono);font-size:10.5px;color:var(--muted);
+        letter-spacing:.05em;padding:0 3px;margin-bottom:3px}
+.bubble{border-radius:14px;padding:10px 13px;font-size:14px;line-height:1.6;word-break:break-word}
+.bwrap.a .bubble{background:var(--blue);color:#F4EFE2;border-bottom-right-radius:4px}
+.bwrap.b .bubble{background:var(--surf);border:1px solid var(--line);
+                 color:var(--ink);border-bottom-left-radius:4px}
+.bfoot{border-top:1px solid rgba(255,255,255,.2);margin-top:8px;
+       padding-top:7px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.bwrap.b .bfoot{border-top-color:var(--line)}
+.emb-badge{display:inline-flex;align-items:center;gap:5px;
+           background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.45);
+           border-radius:20px;padding:2px 10px;
+           font-family:var(--mono);font-size:12px;font-weight:700;color:#fff}
+.emb-note{font-family:var(--mono);font-size:11px;opacity:.7}
+.dec-btn{font-family:var(--mono);font-size:12px;color:var(--blue);background:none;
+         border:1px solid var(--line);border-radius:6px;padding:4px 11px;
+         cursor:pointer;transition:all .15s;white-space:nowrap}
+.dec-btn:hover:not(.done){border-color:var(--blue);background:var(--blue-s)}
+.dec-btn.done{color:var(--green);border-color:var(--green);pointer-events:none}
+.dec-hint{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.rev-badge{display:inline-flex;align-items:center;gap:5px;background:var(--green-s);
+           border:1.5px solid var(--green);border-radius:20px;padding:2px 10px;
+           font-family:var(--mono);font-size:12px;font-weight:700;color:var(--green)}
+.tdots{display:flex;gap:4px;padding:3px 0}
+.tdots span{width:6px;height:6px;border-radius:50%;background:var(--muted);
+            animation:td 1.2s ease-in-out infinite}
+.tdots span:nth-child(2){animation-delay:.2s}.tdots span:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,60%,100%{opacity:.3;transform:scale(.8)}30%{opacity:1;transform:scale(1)}}
+.tcur{display:inline-block;width:7px;height:13px;background:currentColor;
+      vertical-align:text-bottom;animation:blink .7s step-end infinite;opacity:.7}
+@keyframes blink{50%{opacity:0}}
+.sys-msg{align-self:center;font-family:var(--mono);font-size:11.5px;
+         color:var(--muted);text-align:center;max-width:92%;line-height:1.6}
+
+#input-wrap{border-top:1px solid var(--line);padding:11px 16px 14px;
+            background:var(--surf);flex-shrink:0}
+#move-row{display:flex;align-items:center;gap:8px;min-height:26px;margin-bottom:7px}
+#mbadge{display:none;align-items:center;gap:5px;padding:2px 10px 2px 8px;
+        background:var(--surf2);border:1.5px solid var(--blue);border-radius:20px;
+        font-family:var(--mono);font-size:13px;color:var(--blue);font-weight:700}
+#mbadge.show{display:flex}
+#mbadge .pc{font-size:15px}
+#clr-mv{background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:0 2px}
+#clr-mv:hover{color:var(--red)}
+#drag-hint{font-family:var(--mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em}
+#prompt-input{width:100%;padding:8px 11px;border:1px solid var(--line);border-radius:9px;
+              background:var(--bg);color:var(--ink);font-size:14px;font-family:var(--sans);
+              resize:none;margin-bottom:7px;line-height:1.5}
+#prompt-input:focus{outline:none;border-color:var(--blue)}
+#prompt-input:disabled{opacity:.5}
+#prompt-input::placeholder{color:var(--muted)}
+#send{width:100%;padding:9px;background:var(--blue);color:#F4EFE2;font-weight:600;
+      font-size:14px;font-family:var(--sans);border:none;border-radius:9px;cursor:pointer;
+      transition:background .15s,opacity .15s}
+#send:hover:not(:disabled){background:var(--blue2)}
+#send:disabled{opacity:.38;cursor:not-allowed}
+
+.sq-u1{background:rgba(42,75,208,.22)!important}.sq-u2{background:rgba(42,75,208,.4)!important}
+.sq-e1{background:rgba(46,125,87,.22)!important}.sq-e2{background:rgba(46,125,87,.4)!important}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:3px}
+</style>
+</head>
+<body>
+<div id="offline-banner">
+  Demo offline — backend not running.
+  To connect: add <code>?backend=wss://YOUR-POD-8000.proxy.runpod.net</code> to this URL.
+  <a href="../" style="color:#fff;margin-left:12px;">← Back to project site</a>
+</div>
+
+<div id="app">
+  <header>
+    <h1>BAM <span class="sep">/</span></h1>
+    <span class="sub">covert chess over LLM conversation</span>
+    <span id="hstatus">Connecting…</span>
+    <div id="dot"></div>
+  </header>
+  <main>
+    <div id="chess">
+      <div class="prow" id="prow-b">
+        <div class="av">🤖</div>
+        <div><span class="nm">Agent B</span><span class="cl">Black · decoder + encoder</span></div>
+        <span class="ck" id="ck-b">—</span>
+      </div>
+      <div id="chessboard"></div>
+      <div class="prow active" id="prow-w">
+        <div class="av">👤</div>
+        <div><span class="nm">You</span><span class="cl">White · encoder</span></div>
+        <span class="ck" id="ck-w">Your move</span>
+      </div>
+      <div id="movelist"></div>
+    </div>
+    <div id="chat">
+      <div id="flow-strip">
+        <div class="fl">
+          <span class="fl-box you">Your prompt + move</span>
+          <span class="fl-arrow">→</span>
+          <span class="fl-box">Agent A (LLM)</span>
+          <span class="fl-arrow">→</span>
+          <span class="fl-box">watermarked text</span>
+          <span class="fl-arrow">→</span>
+          <span class="fl-box ai">Agent B (LLM)</span>
+          <span class="fl-arrow">→</span>
+          <span class="fl-box">decodes move · Stockfish · embeds reply</span>
+        </div>
+        <span class="fl-note">Agent B never sees the chess move explicitly</span>
+      </div>
+      <div id="msgs"></div>
+      <div id="input-wrap">
+        <div id="move-row">
+          <div id="mbadge"><span class="pc">♟</span><span id="msan">—</span>
+            <button id="clr-mv">×</button></div>
+          <span id="drag-hint">← Drag a piece to select your move</span>
+        </div>
+        <textarea id="prompt-input" rows="2"
+          placeholder="Type a conversation prompt…" disabled></textarea>
+        <button id="send" disabled>Send</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+
+<script>
+// ── backend URL resolution ──────────────────────────────────────────
+// Priority: ?backend= param → same-origin (on RunPod) → offline
+function getWsUrl() {
+  const sid = 'bam-' + Math.random().toString(36).slice(2,9);
+  const p   = new URLSearchParams(location.search);
+  const ext = p.get('backend');
+
+  if (ext) {
+    // Explicit RunPod URL passed as query param
+    return `${ext}/ws/${sid}`;
+  }
+  if (!location.hostname.includes('github.io') && location.hostname !== 'localhost' && location.protocol !== 'file:') {
+    // Running directly on the pod (FastAPI serves this file)
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    return `${proto}://${location.host}/ws/${sid}`;
+  }
+  return null;  // GitHub Pages with no backend param → offline
+}
+
+// ── state ────────────────────────────────────────────────────────────
+let game=new Chess(), board=null, ws=null;
+let pendingSan=null, pendingUci=null, pendingFrom=null, pendingTo=null;
+let busy=false;
+let curExDiv=null, curABub=null, curBBub=null;
+let storedEngineMove=null, storedEngineSan=null, storedFen=null;
+let curFromSq=null, curToSq=null, curMoveSan=null, curLegalCount=null;
+
+// ── board ────────────────────────────────────────────────────────────
+function mkBoard(fen){
+  if(board)board.destroy();
+  game=new Chess(fen||undefined);
+  board=Chessboard('chessboard',{
+    position:game.fen(), draggable:true,
+    pieceTheme:'https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/img/chesspieces/wikipedia/{piece}.png',
+    onDragStart,onDrop,onSnapEnd:()=>board.position(game.fen()),
+  });
+}
+function onDragStart(source,piece){
+  if(busy||game.game_over()||game.turn()!=='w')return false;
+  if(/^b/.test(piece))return false;
+  if(pendingSan)undoPending(false);
+  return true;
+}
+function onDrop(source,target){
+  clearHL();
+  const mv=game.move({from:source,to:target,promotion:'q'});
+  if(!mv)return 'snapback';
+  pendingSan=mv.san;pendingUci=mv.from+mv.to+(mv.promotion||'');
+  pendingFrom=source;pendingTo=target;
+  hl(source,'sq-u1');hl(target,'sq-u2');
+  showBadge(mv.san);updateSend();
+}
+function undoPending(animate=true){
+  if(!pendingSan)return;
+  game.undo();if(animate)board.position(game.fen());
+  pendingSan=pendingUci=pendingFrom=pendingTo=null;
+  clearHL();hideBadge();updateSend();
+}
+function hl(sq,c){const e=document.querySelector(`.square-${sq}`);if(e)e.classList.add(c)}
+function clearHL(){document.querySelectorAll('.square-55d63').forEach(e=>e.classList.remove('sq-u1','sq-u2','sq-e1','sq-e2'))}
+
+// ── badge / input ─────────────────────────────────────────────────────
+function showBadge(san){
+  document.getElementById('msan').textContent=san;
+  document.getElementById('mbadge').classList.add('show');
+  document.getElementById('drag-hint').textContent='Move selected — type your prompt';
+  document.getElementById('prompt-input').disabled=false;
+  document.getElementById('prompt-input').focus();
+}
+function hideBadge(){
+  document.getElementById('mbadge').classList.remove('show');
+  document.getElementById('drag-hint').textContent='← Drag a piece to select your move';
+  document.getElementById('prompt-input').disabled=true;
+  document.getElementById('prompt-input').value='';
+}
+function updateSend(){
+  const ok=!!pendingSan&&document.getElementById('prompt-input').value.trim().length>0
+            &&!!ws&&ws.readyState===WebSocket.OPEN;
+  document.getElementById('send').disabled=busy||!ok;
+}
+document.getElementById('clr-mv').onclick=()=>undoPending();
+document.getElementById('prompt-input').addEventListener('input',updateSend);
+document.getElementById('send').addEventListener('click',doSend);
+document.getElementById('prompt-input').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey&&!busy){e.preventDefault();doSend();}
+});
+
+// ── send ──────────────────────────────────────────────────────────────
+function doSend(){
+  if(busy||!pendingSan||!ws||ws.readyState!==WebSocket.OPEN)return;
+  busy=true;updateSend();
+  const prompt=document.getElementById('prompt-input').value.trim();
+  curMoveSan=pendingSan;curFromSq=pendingFrom;curToSq=pendingTo;
+  curLegalCount=game.moves().length;
+  document.getElementById('prompt-input').value='';
+  hideBadge();
+  curExDiv=document.createElement('div');curExDiv.className='exchange';
+  document.getElementById('msgs').appendChild(curExDiv);
+  const pl=document.createElement('div');pl.className='prompt-label';
+  pl.innerHTML=`<span>Prompt →</span><span class="pl-text">"${esc(prompt)}"</span>`;
+  curExDiv.appendChild(pl);
+  const aw=mkBwrap('a','AGENT A');curExDiv.appendChild(aw);
+  curABub=aw.querySelector('.bubble');addCur(curABub);scroll();
+  ws.send(JSON.stringify({type:'user_turn',chat:prompt,move:pendingUci}));
+  pendingSan=pendingUci=pendingFrom=pendingTo=null;
+  status('Agent A embedding your move into watermarked text…');
+}
+
+// ── websocket message handler ─────────────────────────────────────────
+function handleMsg(d){
+  switch(d.type){
+    case 'ready':
+      setConn(true);status('Ready — drag a piece to start');
+      clearMsgs();addSys('Make a move, type a prompt, click Send.\nClick Decode on the AI\'s reply to reveal the hidden chess move.');
+      updateSend();break;
+    case 'status': status(d.msg);break;
+    case 'token':
+      if(d.agent==='llm1'&&curABub){
+        rmCur(curABub);curABub.__t=(curABub.__t||'')+d.text;
+        curABub.textContent=curABub.__t;addCur(curABub);scroll();
+      } else if(d.agent==='llm2'&&curBBub){
+        rmCur(curBBub);curBBub.__t=(curBBub.__t||'')+d.text;
+        curBBub.textContent=curBBub.__t;addCur(curBBub);scroll();
+      }
+      break;
+    case 'turn_done':
+      if(d.agent==='llm1'&&curABub){rmCur(curABub);curABub.textContent=d.text;scroll();}
+      else if(d.agent==='llm2'&&curBBub){
+        rmCur(curBBub);curBBub.textContent=d.text;
+        addDecodeBtn(curBBub);busy=false;updateSend();scroll();
+      }
+      break;
+    case 'decode_result':
+      if(curABub){
+        const bf=document.createElement('div');bf.className='bfoot';
+        const eb=document.createElement('span');eb.className='emb-badge';
+        eb.innerHTML=`<span>${d.correct?'✓':'~'}</span> Embedded: ♟ ${curMoveSan}`;
+        const en=document.createElement('span');en.className='emb-note';
+        en.textContent=`decoded from text alone (M=${curLegalCount} legal moves${d.correct?'':' — mismatch'})`;
+        bf.appendChild(eb);bf.appendChild(en);curABub.appendChild(bf);
+        const tw=mkBwrap('b','AGENT B');tw.id='__typing__';
+        tw.querySelector('.bubble').innerHTML='<div class="tdots"><span></span><span></span><span></span></div>';
+        curExDiv.appendChild(tw);scroll();
+      }
+      status('Agent B decoding · Stockfish · generating watermarked reply…');break;
+    case 'engine_move':
+      storedEngineMove=d.move;storedEngineSan=d.san;
+      storedFen=null;  // will be set in board_update
+      const tw=document.getElementById('__typing__');if(tw)tw.remove();
+      const bw=mkBwrap('b','AGENT B');curExDiv.appendChild(bw);
+      curBBub=bw.querySelector('.bubble');addCur(curBBub);scroll();break;
+    case 'board_update':
+      // Store final FEN but do NOT update board yet — Decode click does that
+      storedFen=d.fen;break;
+    case 'game_over':
+      addSys(`Game over: ${d.result}`);busy=false;updateSend();break;
+    case 'reset_ok':
+      mkBoard();clearMsgs();addSys('New game. Drag a piece to begin.');
+      updatePlayerRows();updateMovelist();storedEngineMove=storedEngineSan=storedFen=null;
+      busy=false;updateSend();break;
+    case 'error':
+      addSys(`Error: ${d.msg}`);busy=false;updateSend();break;
+  }
+}
+
+function addDecodeBtn(bub){
+  const bf=document.createElement('div');bf.className='bfoot';
+  const hint=document.createElement('span');hint.className='dec-hint';
+  hint.textContent='contains hidden chess move';
+  const btn=document.createElement('button');btn.className='dec-btn';
+  btn.textContent='Decode hidden move ▸';
+  bf.appendChild(hint);bf.appendChild(btn);bub.appendChild(bf);
+  btn.addEventListener('click',()=>{
+    if(btn.classList.contains('done'))return;
+    btn.classList.add('done');btn.textContent='✓ Decoded';hint.textContent='';
+    const rb=document.createElement('span');rb.className='rev-badge';
+    rb.innerHTML=`♟ ${storedEngineSan} — hidden move recovered`;
+    bf.appendChild(rb);
+    if(storedFen){
+      game.load(storedFen);board.position(storedFen);
+      clearHL();
+      if(curFromSq){hl(curFromSq,'sq-u1');hl(curToSq,'sq-u2');}
+      if(storedEngineMove){
+        const f=storedEngineMove.slice(0,2),t=storedEngineMove.slice(2,4);
+        setTimeout(()=>{hl(f,'sq-e1');hl(t,'sq-e2');},60);
+      }
+      updateMovelist();updatePlayerRows();
+    }
+    storedEngineMove=storedEngineSan=storedFen=null;
+    scroll();status('Your turn — make another move');
+  });
+}
+
+// ── websocket connection ──────────────────────────────────────────────
+function connect(){
+  const url=getWsUrl();
+  if(!url){
+    // No backend → show offline banner
+    document.getElementById('offline-banner').classList.add('show');
+    status('Demo offline');setConn(false);
+    clearMsgs();
+    addSys('Backend not connected.\n\nTo see the live demo, ask the authors for the current demo link,\nor add ?backend=wss://YOUR-POD.proxy.runpod.net to this URL.');
+    return;
+  }
+  ws=new WebSocket(url);
+  ws.onopen   =()=>{status('Connected — loading model…');setConn(true);};
+  ws.onclose  =()=>{setConn(false);status('Disconnected');busy=false;updateSend();};
+  ws.onerror  =()=>{setConn(false);status('Connection error — backend may be offline');};
+  ws.onmessage=ev=>handleMsg(JSON.parse(ev.data));
+}
+
+// ── helpers ───────────────────────────────────────────────────────────
+function mkBwrap(side,label){
+  const w=document.createElement('div');w.className=`bwrap ${side}`;
+  const l=document.createElement('div');l.className='blabel';l.textContent=label;
+  const b=document.createElement('div');b.className='bubble';
+  w.appendChild(l);w.appendChild(b);return w;
+}
+function addCur(el){const c=document.createElement('span');c.className='tcur';c.id='__cur__';el.appendChild(c)}
+function rmCur(el){const c=el.querySelector('#__cur__');if(c)c.remove()}
+function scroll(){const e=document.getElementById('msgs');e.scrollTop=e.scrollHeight}
+function status(m){document.getElementById('hstatus').textContent=m}
+function setConn(on){document.getElementById('dot').classList.toggle('on',on);updateSend()}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function clearMsgs(){document.getElementById('msgs').innerHTML=''}
+function addSys(t){const d=document.createElement('div');d.className='sys-msg';
+                   d.textContent=t;document.getElementById('msgs').appendChild(d);scroll()}
+function updateMovelist(){
+  const h=game.history(),ml=document.getElementById('movelist');ml.innerHTML='';
+  for(let i=0;i<h.length;i+=2){
+    const n=i/2+1,w=h[i]||'',b=h[i+1]||'';
+    ml.innerHTML+=`<span class="mn">${n}.</span><span class="mw">${w}</span>${b?`<span class="mb">${b}</span>`:''}`;
+  }
+}
+function updatePlayerRows(){
+  const white=game.turn()==='w';
+  document.getElementById('prow-w').classList.toggle('active',white);
+  document.getElementById('prow-b').classList.toggle('active',!white);
+  document.getElementById('ck-w').textContent=white?'Your move':'—';
+  document.getElementById('ck-b').textContent=white?'—':'Thinking…';
+}
+
+window.addEventListener('DOMContentLoaded',()=>{mkBoard();connect();});
+</script>
+</body>
+</html>

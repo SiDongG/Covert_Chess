@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Hidden Conversations — Black-Box Covert Communication Between AI Agents</title>
+<meta name="description" content="Two AI agents can hold an ordinary conversation and secretly play chess inside it — provably undetectable, sharing no model or prompt." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+<style>
+:root {
+  --bg:         #EEE7D6;   /* warm paper */
+  --surface:    #F7F2E7;
+  --surface-2:  #F2ECDD;
+  --ink:        #17284D;   /* deep blue */
+  --ink-2:      #47516B;
+  --muted:      #8A836C;
+  --line:       #DED4BE;
+  --line-2:     #CFC3A6;
+  --accent:     #2A4BD0;   /* signal blue */
+  --accent-2:   #4E6BE0;
+  --accent-soft:rgba(42,75,208,0.10);
+  --accent-brd: rgba(42,75,208,0.32);
+  --confirm:    #2E7D57;
+  --alert:      #B4472F;
+  --amber:      #A9791F;
+
+  --font-display: "Space Grotesk", system-ui, sans-serif;
+  --font-body:    "Inter", system-ui, sans-serif;
+  --font-mono:    "Space Mono", ui-monospace, monospace;
+
+  --wrap: 1060px;
+  --radius: 14px;
+}
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { animation: none !important; transition: none !important; } }
+
+.wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 24px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 600; line-height: 1.14; letter-spacing: -0.02em; margin: 0; color: var(--ink); }
+h2 { font-size: clamp(27px, 3.8vw, 38px); }
+h3 { font-size: 20px; letter-spacing: -0.01em; }
+p { margin: 0 0 18px; color: var(--ink-2); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+em { color: var(--ink); font-style: italic; }
+strong { color: var(--ink); font-weight: 600; }
+.key { color: var(--accent); font-weight: 600; }
+
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--accent); margin: 0 0 14px; }
+
+/* ---------- info tooltip ---------- */
+.info { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--accent); color: var(--accent); font-family: var(--font-mono); font-size: 10px; font-weight: 700; line-height: 1; cursor: help; position: relative; vertical-align: middle; margin-left: 5px; user-select: none; transition: background .15s ease, color .15s ease; }
+.info:hover, .info:focus-visible { background: var(--accent); color: var(--surface); outline: none; }
+.info .tip { position: absolute; bottom: 155%; left: 50%; transform: translateX(-50%) translateY(4px); width: 230px; background: var(--ink); color: #F2ECDD; font-family: var(--font-body); font-size: 12.5px; font-weight: 400; line-height: 1.5; letter-spacing: 0; text-transform: none; padding: 11px 13px; border-radius: 9px; opacity: 0; pointer-events: none; transition: opacity .16s ease, transform .16s ease; z-index: 30; text-align: left; box-shadow: 0 8px 22px rgba(23,40,77,0.24); }
+.info .tip::after { content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: var(--ink); }
+.info:hover .tip, .info:focus .tip, .info:focus-visible .tip { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ---------- nav ---------- */
+.nav { position: fixed; top: 0; left: 0; right: 0; z-index: 50; transition: background .25s ease, border-color .25s ease; border-bottom: 1px solid transparent; }
+.nav.scrolled { background: rgba(238,231,214,0.85); backdrop-filter: saturate(140%) blur(12px); border-bottom-color: var(--line); }
+.nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+.nav .brand { font-family: var(--font-mono); font-weight: 700; font-size: 15px; color: var(--ink); }
+.nav .brand span { color: var(--accent); }
+.nav-right { display: flex; align-items: center; gap: 22px; }
+.orgs { display: flex; align-items: center; gap: 9px; font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+.orgs .sep { color: var(--line-2); }
+.nav .links { display: flex; gap: 10px; }
+.nav .links a { color: var(--ink); font-size: 14px; font-weight: 500; padding: 7px 14px; border: 1px solid var(--line-2); border-radius: 8px; }
+.nav .links a:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+.nav .links a.primary { background: var(--accent); color: #F4EFE2; border-color: var(--accent); }
+.nav .links a.primary:hover { background: var(--accent-2); color: #F4EFE2; }
+@media (max-width: 720px) { .orgs { display: none; } }
+
+/* ---------- COVER (turing-style hook) ---------- */
+.cover { position: relative; min-height: 100vh; display: flex; align-items: center; overflow: hidden; border-bottom: 1px solid var(--line); }
+.cover-bg { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+/* faint chessboard dissolving from the right */
+.cover-board { position: absolute; top: 0; right: 0; width: 60%; height: 100%;
+  background: repeating-conic-gradient(var(--ink) 0% 25%, transparent 0% 50%) 0 0 / 76px 76px;
+  opacity: 0.15;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 44%, #000 100%);
+          mask-image: linear-gradient(90deg, transparent 0%, #000 44%, #000 100%);
+}
+.cover-sq { position: absolute; background: var(--accent); border-radius: 3px; box-shadow: 0 6px 18px rgba(42,75,208,0.18); }
+.cover-sq.a { width: 30px; height: 30px; top: 30%; left: 41%; opacity: 0.22; transform: rotate(12deg); animation: drift 9s ease-in-out infinite; }
+.cover-sq.b { width: 20px; height: 20px; top: 60%; left: 49%; opacity: 0.28; transform: rotate(-8deg); animation: drift 11s ease-in-out infinite reverse; }
+.cover-sq.c { width: 40px; height: 40px; top: 20%; left: 56%; opacity: 0.15; transform: rotate(20deg); animation: drift 13s ease-in-out infinite; }
+.cover-sq.d { width: 16px; height: 16px; top: 72%; left: 37%; opacity: 0.25; transform: rotate(6deg); animation: drift 8s ease-in-out infinite reverse; }
+@keyframes drift { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-16px) rotate(10deg); } }
+
+.cover-inner { position: relative; z-index: 1; padding: 90px 0; }
+.cover-brand { font-family: var(--font-mono); font-size: 13px; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; margin-bottom: 26px; }
+.hook { font-family: var(--font-display); font-weight: 700; font-size: clamp(38px, 7vw, 78px); line-height: 1.05; letter-spacing: -0.03em; max-width: 15ch; }
+.hook .hook-accent { color: var(--accent); }
+.hook-sub { font-size: clamp(17px, 2.1vw, 21px); color: var(--ink-2); max-width: 54ch; margin-top: 26px; }
+.hook-sub b { color: var(--ink); font-weight: 600; }
+.cover-cta { margin-top: 32px; }
+.scroll-cue { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; }
+.scroll-cue:hover { color: var(--accent); text-decoration: none; }
+.scroll-cue span { display: block; text-align: center; font-size: 16px; margin-top: 4px; animation: bob 2s ease-in-out infinite; }
+@keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
+
+/* ---------- sections ---------- */
+.section { padding: 88px 0; border-bottom: 1px solid var(--line); }
+.section.tight { padding: 64px 0; }
+.lede { font-size: clamp(19px, 2.3vw, 23px); color: var(--ink); line-height: 1.5; max-width: 740px; font-weight: 500; }
+.lede b, .lede .key { font-weight: 700; }
+.body-col { max-width: 730px; }
+.body-col p { font-size: 17.5px; }
+.reveal-on-scroll { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
+.reveal-on-scroll.in { opacity: 1; transform: none; }
+
+/* buttons */
+.btn-row { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; font-family: var(--font-body); font-size: 15px; font-weight: 500; padding: 11px 20px; border-radius: 10px; cursor: pointer; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink); transition: transform .12s ease, border-color .12s ease, background .12s ease; }
+.btn:hover { text-decoration: none; border-color: var(--accent); transform: translateY(-1px); }
+.btn.primary { background: var(--accent); color: #F4EFE2; border-color: var(--accent); font-weight: 600; }
+.btn.primary:hover { background: var(--accent-2); border-color: var(--accent-2); }
+
+/* lead (result + reveal) */
+.lead { padding: 92px 0 84px; }
+.lead h2 { max-width: 18ch; }
+
+/* stat strip */
+.stats { display: flex; margin-top: 30px; border: 1px solid var(--accent-brd); border-radius: var(--radius); overflow: hidden; max-width: 680px; background: linear-gradient(180deg, var(--accent-soft), transparent); }
+.stat { padding: 20px 24px; flex: 1; border-right: 1px solid var(--line); }
+.stat:last-child { border-right: none; }
+.stat .num { font-family: var(--font-display); font-size: 32px; font-weight: 700; color: var(--accent); line-height: 1; }
+.stat .lab { font-family: var(--font-mono); font-size: 11px; letter-spacing: .05em; color: var(--ink-2); margin-top: 9px; text-transform: uppercase; display: flex; align-items: center; }
+.stat-note { margin-top: 14px; font-size: 15px; color: var(--ink-2); max-width: 640px; }
+@media (max-width: 560px) { .stat .num { font-size: 24px; } .stat { padding: 15px 15px; } }
+
+/* reveal widget */
+.reveal-card { margin-top: 40px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px 26px 22px; max-width: 640px; }
+.reveal-card .who { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-bottom: 10px; letter-spacing: .06em; }
+.cover-text { font-size: 19px; line-height: 1.75; color: var(--ink); }
+.tok { transition: color .3s ease, background .3s ease; border-radius: 4px; padding: 0 2px; }
+.revealed .tok { color: var(--accent); font-weight: 600; background: var(--accent-soft); }
+.payload-out { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--line-2); font-family: var(--font-mono); font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 10px; min-height: 24px; }
+.revealed .payload-out .hidden-label { color: var(--accent); }
+.payload-out .val { color: transparent; transition: color .3s ease; font-weight: 700; }
+.revealed .payload-out .val { color: var(--accent); }
+.toggle-btn { margin-top: 18px; font-family: var(--font-mono); font-size: 13px; letter-spacing: .04em; background: none; border: 1px solid var(--line-2); color: var(--ink-2); padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+.toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
+.card-cap { margin-top: 14px; font-size: 14px; color: var(--muted); max-width: 640px; }
+.card-cap b { color: var(--ink-2); font-weight: 600; }
+
+/* comparison */
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 30px; }
+.compare .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 24px; }
+.compare .card.ours { border-color: var(--accent-brd); background: linear-gradient(180deg, var(--accent-soft), transparent); }
+.compare .tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.compare .card.ours .tag { color: var(--accent); }
+.compare h3 { font-size: 17px; margin-bottom: 12px; }
+.compare ul { margin: 0; padding-left: 18px; }
+.compare li { color: var(--ink-2); font-size: 14.5px; margin-bottom: 9px; }
+.compare li b { color: var(--ink); font-weight: 600; }
+@media (max-width: 720px) { .compare { grid-template-columns: 1fr; } }
+
+/* slots */
+.slot { border: 1.5px dashed var(--line-2); border-radius: var(--radius); background: repeating-linear-gradient(45deg, transparent, transparent 12px, var(--accent-soft) 12px, var(--accent-soft) 24px); padding: 40px 28px; text-align: center; color: var(--muted); font-family: var(--font-mono); font-size: 13px; letter-spacing: .04em; }
+.slot strong { display: block; color: var(--ink-2); font-family: var(--font-display); font-size: 16px; letter-spacing: 0; margin-bottom: 6px; font-weight: 600; }
+
+/* challenge / fix */
+.cf { border-left: 2px solid var(--line-2); padding: 4px 0 4px 26px; margin: 38px 0; max-width: 800px; }
+.cf .ct { font-family: var(--font-mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--alert); margin-bottom: 10px; }
+.cf h3 { margin-bottom: 12px; }
+.cf .fix-label { font-family: var(--font-mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--confirm); margin: 20px 0 8px; }
+.cf p { margin: 0 0 14px; }
+
+/* callouts + expandable */
+.callout { margin: 20px 0; border-radius: var(--radius); padding: 20px 22px; background: var(--accent-soft); border: 1px solid var(--accent-brd); }
+.callout.neutral { background: var(--surface-2); border-color: var(--line); }
+.callout .clabel { font-family: var(--font-mono); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+.callout.neutral .clabel { color: var(--ink-2); }
+.callout .eq { text-align: center; padding: 8px 0 4px; font-size: 19px; color: var(--ink); }
+.callout .gloss { font-size: 14.5px; color: var(--ink-2); margin: 10px 0 0; text-align: center; }
+details.more { margin: 6px 0 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+details.more > summary { cursor: pointer; list-style: none; padding: 13px 16px; font-size: 14.5px; color: var(--ink-2); display: flex; align-items: center; gap: 10px; }
+details.more > summary::-webkit-details-marker { display: none; }
+details.more > summary::before { content: "›"; font-family: var(--font-mono); color: var(--accent); font-size: 18px; transition: transform .2s ease; }
+details.more[open] > summary::before { transform: rotate(90deg); }
+details.more .inner { padding: 0 16px 16px; color: var(--ink-2); font-size: 15px; }
+
+/* points */
+.points { display: grid; gap: 16px; margin-top: 24px; max-width: 760px; }
+.point { display: flex; gap: 14px; }
+.point .n { font-family: var(--font-mono); font-size: 13px; color: var(--accent); font-weight: 700; padding-top: 2px; min-width: 22px; }
+.point p { margin: 0; }
+.point strong { color: var(--ink); font-weight: 600; }
+
+/* demo steps */
+.steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 30px; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; }
+.step .k { font-family: var(--font-mono); font-size: 12px; color: var(--accent); letter-spacing: .06em; }
+.step h3 { margin: 10px 0 6px; font-size: 17px; }
+.step p { margin: 0; font-size: 14.5px; }
+@media (max-width: 720px) { .steps { grid-template-columns: 1fr; } }
+
+/* authors */
+.author-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 34px; }
+.author { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; }
+.author .avatar { width: 62px; height: 62px; border-radius: 50%; background: var(--accent-soft); border: 1px solid var(--accent-brd); color: var(--accent); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 700; font-size: 19px; margin-bottom: 14px; }
+.author h3 { font-size: 17px; }
+.author .role { font-size: 13.5px; color: var(--muted); font-family: var(--font-mono); margin: 2px 0 10px; }
+.author p { font-size: 14px; margin: 0; }
+@media (max-width: 760px) { .author-grid { grid-template-columns: 1fr; } }
+.blind-note { margin-top: 22px; font-size: 14px; color: var(--muted); font-style: italic; }
+
+/* contact */
+.contact-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-top: 30px; max-width: 760px; }
+.contact-card { display: block; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px 22px; color: var(--ink); }
+.contact-card:hover { border-color: var(--accent); text-decoration: none; }
+.contact-card .t { font-family: var(--font-display); font-weight: 600; font-size: 16px; margin-bottom: 4px; }
+.contact-card .d { font-size: 13.5px; color: var(--muted); }
+@media (max-width: 620px) { .contact-grid { grid-template-columns: 1fr; } }
+
+footer { padding: 40px 0 64px; }
+footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: 13.5px; font-family: var(--font-mono); }
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.katex { color: inherit; }
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<nav class="nav" id="nav">
+  <div class="wrap">
+    <div class="brand">hidden<span>/</span>conversations</div>
+    <div class="nav-right">
+      <!-- swap these for org logos (<img>) when you have them -->
+      <div class="orgs">
+        <span>[Organization One]</span>
+        <span class="sep">·</span>
+        <span>[Organization Two]</span>
+      </div>
+      <div class="links">
+        <a class="primary" href="./demo/">Demo</a>
+        <a href="https://arxiv.org/abs/XXXX.XXXXX">Paper</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ 0 · COVER / HOOK ============ -->
+<header class="cover">
+  <div class="cover-bg" aria-hidden="true">
+    <div class="cover-board"></div>
+    <div class="cover-sq a"></div><div class="cover-sq b"></div>
+    <div class="cover-sq c"></div><div class="cover-sq d"></div>
+  </div>
+  <div class="cover-inner wrap">
+    <p class="cover-brand">covert communication · llm agents</p>
+    <h1 class="hook">Covert communication in LLM-agent conversations.<br><span class="hook-accent">No shared model. No shared prompt.</span></h1>
+    <p class="hook-sub">Two agents embed and recover a hidden message through ordinary dialogue — the receiver sees <b>only the text</b>, with no access to the other agent's model, prompt, or token probabilities. The transcript stays provably indistinguishable from a normal conversation.</p>
+    <div class="btn-row cover-cta">
+      <a class="btn primary" href="./demo/">Try the live demo</a>
+      <a class="btn" href="#lead">See how it works</a>
+    </div>
+  </div>
+  <a class="scroll-cue" href="#lead">scroll<span>↓</span></a>
+</header>
+
+<!-- ============ 1 · LEAD (result + reveal) ============ -->
+<section class="section lead" id="lead">
+  <div class="wrap reveal-on-scroll">
+    <p class="eyebrow">the headline</p>
+    <h2>Reliable enough to be a real communication channel.</h2>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="num">≈0.2</div>
+        <div class="lab">bits / token
+          <span class="info" tabindex="0" role="note" aria-label="An 8-bit payload embedded in roughly 40 to 48 tokens, measured on the C4 News dataset.">i<span class="tip">8-bit payload embedded in ~40–48 tokens, measured on the C4 News dataset.</span></span>
+        </div>
+      </div>
+      <div class="stat">
+        <div class="num">&lt;0.3%</div>
+        <div class="lab">message error
+          <span class="info" tabindex="0" role="note" aria-label="Message-error rate, not bit-error: a single wrong bit fails the whole message. Averaged over 1000 trials per model.">i<span class="tip">Message-error rate (one wrong bit fails the whole message), over 1000 trials per model.</span></span>
+        </div>
+      </div>
+      <div class="stat">
+        <div class="num">3</div>
+        <div class="lab">open models
+          <span class="info" tabindex="0" role="note" aria-label="Llama 3.1 8B, Qwen 3.5 9B, and Mistral 7B v0.3, at temperature 1.0 with top-50 sampling.">i<span class="tip">Llama-3.1-8B, Qwen-3.5-9B, Mistral-7B-v0.3 · temperature 1.0, top-50 sampling.</span></span>
+        </div>
+      </div>
+    </div>
+    <p class="stat-note"><strong>Near error-free embedding at ≈0.2 bits per token</strong>, on every open-source model we tested.</p>
+
+    <div class="reveal-card" id="revealCard">
+      <div class="who">agent a · casual chat</div>
+      <p class="cover-text">
+        yeah <span class="tok">honestly</span> my weekend was <span class="tok">pretty</span> chill,
+        mostly <span class="tok">just</span> stayed in and <span class="tok">watched</span> some stuff
+      </p>
+      <div class="payload-out">
+        <span class="hidden-label">hidden move:</span>
+        <span class="val">♟ &nbsp;e2 → e4</span>
+      </div>
+      <button class="toggle-btn" id="revealBtn" aria-pressed="false">reveal hidden message</button>
+    </div>
+    <p class="card-cap"><b>Same words, two meanings.</b> Toggle to reveal the move hidden in this turn — recovered by the other agent from the text alone.</p>
+  </div>
+</section>
+
+<!-- ============ 2 · THE GAP ============ -->
+<section class="section" id="gap">
+  <div class="wrap reveal-on-scroll">
+    <p class="eyebrow">the gap</p>
+    <h2>Hiding a message in AI text isn't new. Doing it with no shared model or prompt is.</h2>
+    <p class="lede">Prior methods work — but only if the two agents share a <span class="key">model</span>, a <span class="key">prompt</span>, and a stream of randomness as long as the message. Take those crutches away — so the receiver sees only the generated text, with nothing about the sender's model (the <span class="key">black-box</span> setting) — and almost nothing survives on real conversation. That's the gap we close.</p>
+
+    <div class="compare">
+      <div class="card">
+        <div class="tag">prior work</div>
+        <h3>Shared-model, fixed-length</h3>
+        <ul>
+          <li>Needs a <b>shared model and prompt</b></li>
+          <li>Needs <b>synchronized randomness</b> that grows with the message</li>
+          <li><b>Fixed codeword length</b> — breaks when a turn ends early or runs long</li>
+          <li><b>Too many errors</b> on low-entropy chat</li>
+        </ul>
+      </div>
+      <div class="card ours">
+        <div class="tag">this work</div>
+        <h3>No sharing, adaptive</h3>
+        <ul>
+          <li><b>Prompt- and model-agnostic</b> — the decoder only reads text</li>
+          <li>Side info from a <b>shared seed</b>, not a length-scaled key stream
+            <span class="info" tabindex="0" role="note" aria-label="A single 128-bit seed plus a fresh public nonce per session, expanded on demand with HMAC-SHA-256.">i<span class="tip">One 128-bit seed + a fresh per-session nonce, expanded on demand via HMAC-SHA-256.</span></span>
+          </li>
+          <li><b>Variable-length</b> — adapts to however the turn unfolds</li>
+          <li><b>Reliable</b> even when each word carries almost no entropy</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 3 · THE SETTING ============ -->
+<section class="section" id="setting">
+  <div class="wrap reveal-on-scroll">
+    <p class="eyebrow">the setting, precisely</p>
+    <h2>Token generation is a channel with feedback</h2>
+    <div class="body-col">
+      <p>Normally the model just samples the next token from its distribution. The sender instead <span class="key">biases</span> which token gets chosen, so it carries a symbol of the message; the receiver recovers that symbol from the text and a shared seed alone. Write the message as \( m \in \{0,1\}^{\ell} \) — the decoder is a function \( g(X, \kappa)\to\hat m \) of the transcript and seed that <strong>never touches the model.</strong></p>
+      <p>The fact everything rests on: <strong>both agents see each token the instant it appears.</strong> The sender always knows exactly what the receiver knows — a channel with <span class="key">causal, noiseless feedback</span>, and feedback is the lever we pull for reliability.</p>
+    </div>
+    <div class="slot" style="margin-top:32px;">
+      <strong>[ visual slot — the feedback channel ]</strong>
+      A simplified Figure 1: token sampled, seen by both parties, side info from the seed, belief fed back to the next step.
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4 · CHALLENGES & FIXES ============ -->
+<section class="section" id="challenges">
+  <div class="wrap reveal-on-scroll">
+    <p class="eyebrow">challenges &amp; fixes</p>
+    <h2>Four obstacles, four fixes</h2>
+    <p class="lede">Operating with no shared model or prompt — the receiver reads only text — creates specific problems. Here is each one, and the mechanism that resolves it.</p>
+
+    <div class="cf">
+      <div class="ct">Challenge 01 — the decoder can't see the model</div>
+      <h3>Recover the symbol from text alone</h3>
+      <p>With no access to token probabilities, the receiver needs to read back what was sent using <strong>only the words and the shared seed.</strong></p>
+      <div class="fix-label">the fix — geometry on a circle</div>
+      <p>Following ArcMark<span class="info" tabindex="0" role="note" aria-label="ArcMark places tokens and message symbols on a unit circle and biases sampling by angular distance; we build our channel on its coupling.">i<span class="tip">ArcMark: tokens and symbols placed on a unit circle, sampling biased by angular distance.</span></span>, every token and every message symbol sits on a <span class="key">unit circle</span>. Sampling nudges the text toward the token whose angle is nearest the target; the receiver re-derives that angle \( \hat{C}_t \) from the token and seed — <strong>no model in the loop.</strong></p>
+    </div>
+
+    <div class="cf">
+      <div class="ct">Challenge 02 — conversation is low-entropy</div>
+      <h3>Spread the message across many tokens</h3>
+      <p>Most words in a chat have one obvious continuation, so <strong>any single token can carry almost nothing.</strong> Push too hard and the text turns unnatural.</p>
+      <div class="fix-label">the fix — posterior matching</div>
+      <p>Rather than loading bits onto individual tokens, the sender exploits the feedback: at each step it picks the next symbol from the decoder's <span class="key">current belief</span>, steering that belief to concentrate on the true message across many low-entropy tokens.</p>
+      <div class="callout" data-eq>
+        <div class="clabel">the belief update</div>
+        <div class="eq">\( \pi_t(m) \;\propto\; \pi_{t-1}(m)\,\cdot\,\ell_t(m) \)</div>
+        <p class="gloss">belief in message <em>m</em> after this token = belief before × how well the token fits <em>m</em></p>
+      </div>
+    </div>
+
+    <div class="cf">
+      <div class="ct">Challenge 03 — variable-length turns, and confident-but-wrong guesses</div>
+      <h3>Feedback coding: the Yamamoto–Itoh decode-and-confirm scheme</h3>
+      <p>A fixed codeword can't match a turn that ends early or runs long — and even a confident guess can be wrong. The answer is to <strong>use the feedback channel as a code</strong>, not just a belief tracker.</p>
+      <div class="fix-label">the fix — a two-phase feedback code</div>
+      <p>Posterior matching localizes the message; then a <span class="key">Yamamoto–Itoh confirmation phase</span> re-transmits a single ACK/NACK bit to verify it before committing. The stopping time is <strong>variable</strong> — the protocol ends the moment it's sure — and that dedicated confirmation phase is exactly what buys the <span class="key">optimal reliability exponent</span><span class="info" tabindex="0" role="note" aria-label="The Burnashev exponent: the best possible decoding-error decay for a channel with noiseless feedback.">i<span class="tip">The Burnashev exponent — the best possible error decay for a feedback channel.</span></span>. Together they form the feedback code we call BAM.</p>
+      <details class="more">
+        <summary>Where the reliability gain comes from</summary>
+        <div class="inner">
+          Noiseless feedback can't raise capacity, but it sharply improves the error exponent. Two effects combine: <em>sequentiality</em> (a variable stopping time — spend more tokens only while uncertain) and <em>adaptivity</em> (choose each symbol from past observations). The two-phase structure follows Yamamoto–Itoh, and the exponent it targets is Burnashev-optimal. Full statement and proof are in the paper.
+        </div>
+      </details>
+    </div>
+
+    <div class="cf">
+      <div class="ct">Challenge 04 — it has to stay undetectable</div>
+      <h3>Change the meaning, not the statistics</h3>
+      <p>Biasing the text toward a message must leave <strong>no statistical trace</strong> a monitor could learn to catch.</p>
+      <div class="fix-label">the fix — distortion-free coupling</div>
+      <p>An <span class="key">optimal-transport coupling</span><span class="info" tabindex="0" role="note" aria-label="Solved with the Sinkhorn algorithm; holds the observable token distribution exactly equal to the base model, giving zero KL divergence in the sense of Cachin.">i<span class="tip">Solved via Sinkhorn; exact base marginal, so KL divergence is zero in the sense of Cachin.</span></span> picks the biased token while holding the observable distribution exactly equal to the base model's. A nonce-separated pseudorandom function supplies the per-token side information, making the whole transcript computationally indistinguishable from clean generation.</p>
+      <div class="callout" data-eq>
+        <div class="clabel">why it's undetectable</div>
+        <div class="eq">\( \sum_{k} P(k)\, W(x \mid u,k,s) \;=\; W(x \mid s) \)</div>
+        <p class="gloss">averaged over the secret key, the text has exactly the base model's word statistics</p>
+      </div>
+      <p>The upshot: <strong>no test on the visible text does better than a coin flip.</strong> The formal indistinguishability guarantee and its proof are in the paper.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 5 · RESULTS ============ -->
+<section class="section" id="results">
+  <div class="wrap reveal-on-scroll">
+    <p class="eyebrow">does it work</p>
+    <h2>Reliable — and undetectable</h2>
+    <div class="points">
+      <div class="point"><span class="n">01</span><p><strong>Far more reliable.</strong> Across three language models the adaptive scheme recovers the hidden message where <strong>fixed-length baselines fail</strong> — and in fewer tokens.</p></div>
+      <div class="point"><span class="n">02</span><p><strong>Statistically invisible.</strong> A steganalysis detector<span class="info" tabindex="0" role="note" aria-label="TS-CSW, a convolutional steganalysis classifier, trained to separate our text from length-matched clean text. F1 near 0.5 is chance.">i<span class="tip">TS-CSW steganalysis classifier: F1 ≈ 0.50 vs length-matched clean text is chance level.</span></span> trained to separate hidden-message text from clean text performs <strong>at chance.</strong> Fluency and diversity match the unmodified model.</p></div>
+      <div class="point"><span class="n">03</span><p><strong>Across natural dialogue.</strong> Hidden games play out over ordinary multi-turn conversations, payloads carried turn by turn.</p></div>
+    </div>
+    <p class="body-col" style="margin-top:22px;">Full numbers, baselines, and comparisons are in the paper.</p>
+  </div>
+</section>
+
+<!-- ============ 6 · SECURITY / UNDETECTABILITY ============ -->
+<section class="section" id="security">
+  <div class="wrap reveal-on-scroll">
+    <p class="eyebrow">security</p>
+    <h2>Undetectable — and provably so</h2>
+    <div class="body-col">
+      <p>Each token is drawn while <span class="key">holding the visible distribution equal to the base model's</span>, so the conversation carries no statistical signature — which is why the trained detector above sits at chance. Beyond that empirical test, the transcript is <strong>computationally indistinguishable</strong> from ordinary generation to any efficient adversary.</p>
+      <p>The formal statement and its proof are in the paper.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 7 · WHAT THIS MEANS ============ -->
+<section class="section" id="means">
+  <div class="wrap reveal-on-scroll">
+    <p class="eyebrow">what this means</p>
+    <h2>Watching the words isn't enough</h2>
+    <div class="body-col">
+      <p>We build this to make a blind spot concrete: if coordinating agents want a channel hidden in plain conversation, <strong>transcript monitoring alone won't find it</strong> — the visible text is provably ordinary. Defenses have to look elsewhere: at the generation process, at the entropy available to agents, at the <span class="key">coordination itself</span> rather than the payload. We regard that as the central open problem this work raises.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 8 · DEMO ============ -->
+<section class="section" id="demo">
+  <div class="wrap reveal-on-scroll">
+    <p class="eyebrow">try it live</p>
+    <h2>Watch two agents talk — and decode the secret</h2>
+    <div class="steps">
+      <div class="step"><div class="k">STEP 1</div><h3>Pick a hidden game</h3><p>Choose the secret task and the cover conversation the agents will use.</p></div>
+      <div class="step"><div class="k">STEP 2</div><h3>Run the conversation</h3><p>The agents chat naturally while the payload rides along underneath.</p></div>
+      <div class="step"><div class="k">STEP 3</div><h3>Reveal &amp; decode</h3><p>See the hidden message recovered from the text alone, turn by turn.</p></div>
+    </div>
+    <div class="btn-row"><a class="btn primary" href="./demo/">Launch the demo →</a></div>
+  </div>
+</section>
+
+<!-- ============ 9 · AUTHORS ============ -->
+<section class="section" id="authors">
+  <div class="wrap reveal-on-scroll">
+    <p class="eyebrow">authors</p>
+    <h2>Who made this</h2>
+    <div class="author-grid">
+      <div class="author"><div class="avatar">A1</div><h3>[Author One]</h3><div class="role">[affiliation]</div><p>[One line on research focus. Link the name to a homepage.]</p></div>
+      <div class="author"><div class="avatar">A2</div><h3>[Author Two]</h3><div class="role">[affiliation]</div><p>[One line on research focus.]</p></div>
+      <div class="author"><div class="avatar">A3</div><h3>[Author Three]</h3><div class="role">[affiliation]</div><p>[One line on research focus.]</p></div>
+    </div>
+    <p class="blind-note">Note: if the paper is still under double-blind review, keep this section as placeholders (or hidden) until acceptance — it's the part that de-anonymizes the submission.</p>
+  </div>
+</section>
+
+<!-- ============ 10 · CONTACT ============ -->
+<section class="section tight" id="contact">
+  <div class="wrap reveal-on-scroll">
+    <p class="eyebrow">get in touch</p>
+    <h2>We'd love to hear from you</h2>
+    <div class="contact-grid">
+      <a class="contact-card" href="mailto:you@example.edu?subject=%5BHidden%20Conversations%5D%20General%20Feedback"><div class="t">General feedback</div><div class="d">Thoughts on the project or the demo</div></a>
+      <a class="contact-card" href="mailto:you@example.edu?subject=%5BHidden%20Conversations%5D%20Research%20Inquiry"><div class="t">Research inquiries</div><div class="d">Questions about the method or results</div></a>
+      <a class="contact-card" href="mailto:you@example.edu?subject=%5BHidden%20Conversations%5D%20Collaboration"><div class="t">Collaboration</div><div class="d">Interested in working together</div></a>
+      <a class="contact-card" href="mailto:you@example.edu?subject=%5BHidden%20Conversations%5D%20Technical%20Issue"><div class="t">Technical support</div><div class="d">Something broken on the site or demo</div></a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <span>© <span id="yr"></span> [Your Lab]</span>
+    <span>paper on <a href="https://arxiv.org/abs/XXXX.XXXXX">arXiv</a></span>
+  </div>
+</footer>
+
+<script>
+document.getElementById('yr').textContent = new Date().getFullYear();
+
+// nav background on scroll
+(function () {
+  var nav = document.getElementById('nav');
+  function onScroll(){ nav.classList.toggle('scrolled', window.scrollY > 40); }
+  onScroll(); window.addEventListener('scroll', onScroll, { passive: true });
+})();
+
+// reveal toggle
+(function () {
+  var card = document.getElementById('revealCard');
+  var btn = document.getElementById('revealBtn');
+  btn.addEventListener('click', function () {
+    var on = card.classList.toggle('revealed');
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.textContent = on ? 'hide hidden message' : 'reveal hidden message';
+  });
+})();
+
+// scroll reveal
+(function () {
+  var els = document.querySelectorAll('.reveal-on-scroll');
+  if (!('IntersectionObserver' in window)) { els.forEach(function (e){ e.classList.add('in'); }); return; }
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } });
+  }, { threshold: 0.12 });
+  els.forEach(function (e){ io.observe(e); });
+})();
+
+// KaTeX
+window.addEventListener('DOMContentLoaded', function () {
+  if (window.renderMathInElement) {
+    renderMathInElement(document.body, { delimiters: [{ left: '\\(', right: '\\)', display: false }] });
+  }
+});
+</script>
+</body>
+</html>
