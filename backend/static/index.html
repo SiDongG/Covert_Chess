@@ -25,10 +25,27 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
           font-family:var(--sans);font-size:15px;-webkit-font-smoothing:antialiased}
 #app{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
 
-/* offline banner */
-#offline-banner{display:none;background:var(--amber);color:#fff;text-align:center;
-                font-family:var(--mono);font-size:12px;padding:8px;flex-shrink:0}
-#offline-banner.show{display:block}
+/* connect panel — shown instead of the demo when no backend is reachable */
+#connect-panel{display:none;position:fixed;inset:0;z-index:100;
+               background:var(--bg);align-items:center;justify-content:center}
+#connect-panel.show{display:flex}
+#connect-inner{background:var(--surf);border:1px solid var(--line);border-radius:16px;
+               padding:36px 40px;max-width:480px;width:90%;text-align:center}
+#connect-title{font-family:var(--disp);font-size:22px;font-weight:700;
+               color:var(--ink);margin-bottom:10px}
+#connect-sub{font-size:14px;color:var(--ink2);margin-bottom:22px;line-height:1.6}
+#connect-row{display:flex;gap:8px;margin-bottom:14px}
+#backend-input{flex:1;padding:9px 12px;border:1.5px solid var(--line);border-radius:9px;
+               font-family:var(--mono);font-size:13px;background:var(--bg);color:var(--ink)}
+#backend-input:focus{outline:none;border-color:var(--blue)}
+#connect-btn{padding:9px 18px;background:var(--blue);color:#F4EFE2;font-weight:600;
+             font-size:14px;border:none;border-radius:9px;cursor:pointer;white-space:nowrap}
+#connect-btn:hover{background:var(--blue2)}
+#connect-hint{font-family:var(--mono);font-size:11.5px;color:var(--muted);
+              line-height:1.6;margin-bottom:20px}
+#connect-hint code{background:var(--surf2);padding:1px 5px;border-radius:4px;color:var(--ink2)}
+#connect-back{font-family:var(--mono);font-size:12px;color:var(--muted)}
+#connect-back:hover{color:var(--blue)}
 
 header{display:flex;align-items:center;gap:10px;padding:9px 18px;
        background:var(--surf);border-bottom:1px solid var(--line);flex-shrink:0}
@@ -175,10 +192,21 @@ main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
 </head>
 <body>
 <div id="app">
-<div id="offline-banner">
-  Demo offline — backend not running.
-  To connect: add <code>?backend=wss://YOUR-POD-8000.proxy.runpod.net</code> to this URL.
-  <a href="../" style="color:#fff;margin-left:12px;">← Back to project site</a>
+<div id="connect-panel">
+  <div id="connect-inner">
+    <div id="connect-title">Connect to live backend</div>
+    <div id="connect-sub">Paste your RunPod URL below, or open this page directly from the RunPod dashboard.</div>
+    <div id="connect-row">
+      <input id="backend-input" type="text"
+             placeholder="wss://abc123-8000.proxy.runpod.net"
+             autocomplete="off" spellcheck="false"/>
+      <button id="connect-btn">Connect</button>
+    </div>
+    <div id="connect-hint">
+      Get the URL from RunPod dashboard → your pod → Connect → HTTP Service → copy the <code>https://…</code> URL and replace <code>https://</code> with <code>wss://</code>
+    </div>
+    <a href="https://sidongg.github.io/Covert_Chess/" id="connect-back">← Back to project site</a>
+  </div>
 </div>
 
   <header>
@@ -187,7 +215,7 @@ main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
     <span id="hstatus">Connecting…</span>
     <div id="dot"></div>
     <!-- Fix 1: absolute URL so it works from RunPod and GitHub Pages -->
-    <a class="hdr-btn" href="https://sidongg.github.io/Covert_Chess/" target="_blank">← Site</a>
+    <a class="hdr-btn" href="https://sidongg.github.io/Covert_Chess/">← Site</a>
     <button class="hdr-btn danger" id="reset-btn">New game</button>
   </header>
   <main>
@@ -259,22 +287,26 @@ Open-source models can occasionally make mistakes or produce repetitive text.</s
 
 <script>
 // ── backend URL resolution ──────────────────────────────────────────
-// Priority: ?backend= param → same-origin (on RunPod) → offline
-function getWsUrl() {
+function getWsUrl(manualUrl) {
   const sid = 'bam-' + Math.random().toString(36).slice(2,9);
   const p   = new URLSearchParams(location.search);
-  const ext = p.get('backend');
 
-  if (ext) {
-    // Explicit RunPod URL passed as query param
-    return `${ext}/ws/${sid}`;
+  // Priority 1: manually entered URL from the connect panel
+  if (manualUrl) {
+    const base = manualUrl.trim().replace(/\/+$/, '');
+    return `${base}/ws/${sid}`;
   }
-  if (!location.hostname.includes('github.io') && location.hostname !== 'localhost' && location.protocol !== 'file:') {
-    // Running directly on the pod (FastAPI serves this file)
+  // Priority 2: ?backend= query param
+  const ext = p.get('backend');
+  if (ext) return `${ext}/ws/${sid}`;
+  // Priority 3: same-origin (running directly on RunPod)
+  if (!location.hostname.includes('github.io') &&
+      location.hostname !== 'localhost' &&
+      location.protocol !== 'file:') {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
     return `${proto}://${location.host}/ws/${sid}`;
   }
-  return null;  // GitHub Pages with no backend param → offline
+  return null;  // no backend — show connect panel
 }
 
 // ── state ────────────────────────────────────────────────────────────
@@ -372,6 +404,7 @@ function doSend(){
 function handleMsg(d){
   switch(d.type){
     case 'ready':
+      document.getElementById('connect-panel').classList.remove('show');
       setConn(true);status('Ready — drag a piece to start');
       clearMsgs();addSys('Make a move, type a prompt, click Send.\nClick Decode on the AI\'s reply to reveal the hidden chess move.');
       updateSend();break;
@@ -489,21 +522,25 @@ document.getElementById('difficulty-select').addEventListener('change', function
 });
 
 // ── websocket connection ──────────────────────────────────────────────
-function connect(){
-  const url=getWsUrl();
-  if(!url){
-    // No backend → show offline banner
-    document.getElementById('offline-banner').classList.add('show');
-    status('Demo offline');setConn(false);
-    clearMsgs();
-    addSys('Backend not connected.\n\nTo see the live demo, ask the authors for the current demo link,\nor add ?backend=wss://YOUR-POD.proxy.runpod.net to this URL.');
+function connect(manualUrl) {
+  const url = getWsUrl(manualUrl);
+  if (!url) {
+    document.getElementById('connect-panel').classList.add('show');
     return;
   }
-  ws=new WebSocket(url);
-  ws.onopen   =()=>{status('Connected — loading model…');setConn(true);};
-  ws.onclose  =()=>{setConn(false);status('Disconnected');busy=false;updateSend();};
-  ws.onerror  =()=>{setConn(false);status('Connection error — backend may be offline');};
-  ws.onmessage=ev=>handleMsg(JSON.parse(ev.data));
+  // Hide connect panel if it was showing
+  document.getElementById('connect-panel').classList.remove('show');
+
+  ws = new WebSocket(url);
+  ws.onopen    = () => { status('Connected — loading model…'); setConn(true); };
+  ws.onclose   = () => {
+    setConn(false); status('Disconnected');
+    busy = false; updateSend();
+    // Show connect panel again so user can reconnect
+    document.getElementById('connect-panel').classList.add('show');
+  };
+  ws.onerror   = () => { setConn(false); status('Connection error'); };
+  ws.onmessage = ev => handleMsg(JSON.parse(ev.data));
 }
 
 // ── helpers ───────────────────────────────────────────────────────────
@@ -537,7 +574,21 @@ function updatePlayerRows(){
   document.getElementById('ck-b').textContent=white?'—':'Thinking…';
 }
 
-window.addEventListener('DOMContentLoaded',()=>{mkBoard();connect();});
+window.addEventListener('DOMContentLoaded',()=>{
+  mkBoard(); connect();
+
+  // Connect panel button
+  document.getElementById('connect-btn').addEventListener('click', () => {
+    const url = document.getElementById('backend-input').value.trim();
+    if (url) connect(url);
+  });
+  document.getElementById('backend-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const url = document.getElementById('backend-input').value.trim();
+      if (url) connect(url);
+    }
+  });
+});
 </script>
 </body>
 </html>
