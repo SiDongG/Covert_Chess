@@ -57,6 +57,11 @@ class ChessInterface:
     # Engine
     # ------------------------------------------------------------------
 
+    def set_skill_level(self, level: int) -> None:
+        """Change Stockfish difficulty on the fly (0 = weakest, 20 = strongest)."""
+        level = max(0, min(20, int(level)))
+        self._engine.configure({"Skill Level": level})
+
     def best_move(self) -> chess.Move:
         """Ask Stockfish for the best move in the current position."""
         result = self._engine.play(

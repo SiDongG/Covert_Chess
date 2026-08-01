@@ -65,6 +65,30 @@ main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
           color:var(--muted);min-height:18px;max-height:52px;overflow-y:auto;line-height:1.85}
 .mn{color:var(--muted)}.mw,.mb{color:var(--ink2)}.mw{margin:0 3px 0 1px}.mb{margin-right:7px}
 
+/* difficulty row */
+#difficulty-row{width:100%;max-width:var(--bsz);margin-top:10px;
+                display:flex;align-items:center;gap:8px}
+.diff-label{font-family:var(--mono);font-size:12px;color:var(--muted)}
+#difficulty-select{font-family:var(--mono);font-size:12px;padding:4px 8px;
+                   border:1px solid var(--line);border-radius:6px;
+                   background:var(--surf);color:var(--ink);cursor:pointer}
+#difficulty-select:hover{border-color:var(--blue)}
+
+/* info icon tooltip */
+.info-icon{position:relative;display:inline-flex;align-items:center;justify-content:center;
+           width:17px;height:17px;border-radius:50%;border:1px solid var(--blue);
+           color:var(--blue);font-size:11px;cursor:help;flex-shrink:0;
+           font-family:var(--mono);font-style:normal;user-select:none}
+.info-icon .info-tip{position:absolute;bottom:130%;left:50%;transform:translateX(-50%);
+                     width:220px;background:var(--ink);color:#F2ECDD;font-family:var(--sans);
+                     font-size:12px;font-style:normal;line-height:1.5;padding:10px 12px;
+                     border-radius:8px;opacity:0;pointer-events:none;transition:opacity .15s;
+                     z-index:99;text-align:left;white-space:normal}
+.info-icon:hover .info-tip,.info-icon:focus .info-tip{opacity:1;outline:none}
+.info-icon .info-tip::after{content:'';position:absolute;top:100%;left:50%;
+                             transform:translateX(-50%);border:6px solid transparent;
+                             border-top-color:var(--ink)}
+
 #chat{flex:1 1 0;min-width:0;display:flex;flex-direction:column;overflow:hidden}
 #flow-strip{display:flex;align-items:center;padding:6px 14px;
             background:var(--blue-s);border-bottom:1px solid var(--line);
@@ -162,7 +186,8 @@ main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
     <span class="sub">covert chess</span>
     <span id="hstatus">Connecting…</span>
     <div id="dot"></div>
-    <a class="hdr-btn" href="../">← Site</a>
+    <!-- Fix 1: absolute URL so it works from RunPod and GitHub Pages -->
+    <a class="hdr-btn" href="https://sidongg.github.io/Covert_Chess/" target="_blank">← Site</a>
     <button class="hdr-btn danger" id="reset-btn">New game</button>
   </header>
   <main>
@@ -179,6 +204,16 @@ main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
         <span class="ck" id="ck-w">Your move</span>
       </div>
       <div id="movelist"></div>
+      <!-- Fix 2: difficulty selector -->
+      <div id="difficulty-row">
+        <span class="diff-label">Engine:</span>
+        <select id="difficulty-select">
+          <option value="2">Easy</option>
+          <option value="8" selected>Medium</option>
+          <option value="14">Hard</option>
+          <option value="20">Maximum</option>
+        </select>
+      </div>
     </div>
     <div id="chat">
       <div id="flow-strip">
@@ -200,7 +235,13 @@ main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
         <div id="move-row">
           <div id="mbadge"><span class="pc">♟</span><span id="msan">—</span>
             <button id="clr-mv">×</button></div>
+          <!-- Fix 3: drag hint with info icon -->
           <span id="drag-hint">← Drag a piece to select your move</span>
+          <span class="info-icon" tabindex="0" aria-label="How this works">ⓘ
+            <span class="info-tip">Type a conversation prompt for LLM-A to generate cover text.
+The model used is Llama-3.1-8B-Instruct (open source).
+Open-source models can occasionally make mistakes or produce repetitive text.</span>
+          </span>
         </div>
         <textarea id="prompt-input" rows="2"
           placeholder="Type a conversation prompt…" disabled></textarea>
@@ -213,6 +254,8 @@ main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"></script>
+<!-- piece images: cdnjs doesn't serve the img folder, use GitHub raw content instead -->
+<script>const PIECE_THEME='https://raw.githubusercontent.com/oakmac/chessboardjs/master/website/img/chesspieces/wikipedia/{piece}.png';</script>
 
 <script>
 // ── backend URL resolution ──────────────────────────────────────────
@@ -250,7 +293,7 @@ function mkBoard(fen){
   game=new Chess(fen||undefined);
   board=Chessboard('chessboard',{
     position:game.fen(), draggable:true,
-    pieceTheme:'https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/img/chesspieces/wikipedia/{piece}.png',
+    pieceTheme: PIECE_THEME,
     onDragStart,onDrop,onSnapEnd:()=>board.position(game.fen()),
   });
 }
@@ -395,6 +438,7 @@ function handleMsg(d){
       storedEngineMove=storedEngineSan=null;
       lastDecodeCorrect=false;lastDecoded=lastExpected=null;
       busy=false;updateSend();break;
+    case 'difficulty_ok': status(`Engine: ${document.getElementById('difficulty-select').options[document.getElementById('difficulty-select').selectedIndex].text}`);break;
     case 'error':
       addSys(`Error: ${d.msg}`);busy=false;updateSend();break;
   }
@@ -433,6 +477,14 @@ function addDecodeBtn(bub){
 document.getElementById('reset-btn').addEventListener('click',()=>{
   if(ws&&ws.readyState===WebSocket.OPEN){
     ws.send(JSON.stringify({type:'reset'}));
+  }
+});
+
+// Fix 2: difficulty selector
+document.getElementById('difficulty-select').addEventListener('change', function(){
+  if(ws&&ws.readyState===WebSocket.OPEN){
+    ws.send(JSON.stringify({type:'set_difficulty', level:parseInt(this.value)}));
+    status(`Engine difficulty set to: ${this.options[this.selectedIndex].text}`);
   }
 });
 
