@@ -69,9 +69,11 @@ async def ws_endpoint(websocket: WebSocket, session_id: str) -> None:
             lm2=pool.make_backend(),
             stockfish_path=STOCKFISH_PATH,
             bam_cfg=BAMConfig(
-                gamma_1=0.85, gamma_2=0.99,
+                eps_noise_comm=0.5,
+                eps_noise_conf=0.3,
+                gamma_1=0.85,
                 rho_ack=0.95, rho_nack=0.95,
-                p_field=4, eps_noise=0.5,
+                p_field=4,
             ),
             adapter_cfg=ArcMarkConfig(
                 p_field=4, r_resolution=8,

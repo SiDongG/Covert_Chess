@@ -10,7 +10,6 @@ import numpy as np
 # --- event tags used by the optional debug callback ----------------------
 EVT_COMM_UPDATE   = "comm_update"
 EVT_GAMMA1_CROSS  = "gamma1_cross"
-EVT_GAMMA2_DIRECT = "gamma2_direct"
 EVT_CONF_UPDATE   = "conf_update"
 EVT_ACK           = "ack"
 EVT_NACK          = "nack"
@@ -19,15 +18,16 @@ EVT_DONE          = "done"
 
 @dataclass
 class BAMConfig:
-    gamma_1: float = 0.85
-    gamma_2: float = 0.99
-    rho_ack: float = 0.95
-    rho_nack: float = 0.95
-    p_field: int = 4
-    # Mixture-likelihood: prior probability that an observed token is
-    # uninformative (the watermark could not bias it, e.g. a low-entropy
-    # step). Matches EPS_NOISE in compare_chat.py. In [0, 1).
-    eps_noise: float = 0.5
+    # Mixture-likelihood contamination probabilities (in [0, 1)).
+    # eps_noise_comm: used during the communication phase posterior update.
+    # eps_noise_conf: used during the Yamamoto-Itoh confirmation phase.
+    # Different values allow tighter confidence during confirmation.
+    eps_noise_comm: float = 0.5
+    eps_noise_conf: float = 0.3
+    gamma_1: float = 0.85   # COMM → CONF threshold
+    rho_ack: float = 0.95   # CONF accept  threshold
+    rho_nack: float = 0.95  # CONF reject  threshold
+    p_field: int = 4        # channel alphabet size |U|
 
 
 @dataclass
@@ -89,8 +89,9 @@ class BAMTracker:
         Decoder-computable: depends only on angle_obs (token + shared secret)
         and public constants. No distribution / model access.
         """
-        p = self.cfg.p_field
-        eps = self.cfg.eps_noise
+        p   = self.cfg.p_field
+        eps = (self.cfg.eps_noise_comm if self.phase == "COMM"
+               else self.cfg.eps_noise_conf)
         signal = np.empty(p)
         for u in range(p):
             target = (2 * math.pi * u / p + self.phi) % (2 * math.pi)
@@ -174,13 +175,10 @@ class BAMTracker:
             eff = self.effective_pi()
             self._emit(EVT_COMM_UPDATE, {"top_idx": int(eff.argmax()),
                                          "top_prob": float(eff.max())})
-            # check stops
-            if eff.max() >= self.cfg.gamma_2:
-                self.decoded = int(eff.argmax())
-                self.done = True
-                self._emit(EVT_GAMMA2_DIRECT, {"m": self.decoded, "pi": float(eff.max())})
-                self._emit(EVT_DONE, {"m": self.decoded, "tokens": self.t, "via": "gamma2"})
-            elif eff.max() >= self.cfg.gamma_1:
+            # Only one threshold: once gamma_1 is crossed, always enter CONF.
+            # There is no direct-decode shortcut — every decision must be
+            # confirmed by the Yamamoto-Itoh confirmation phase.
+            if eff.max() >= self.cfg.gamma_1:
                 self.candidate = int(eff.argmax())
                 self.phase = "CONF"
                 self.rho = np.array([0.5, 0.5])

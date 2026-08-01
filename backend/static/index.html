@@ -41,10 +41,11 @@ header .sub{font-family:var(--mono);font-size:12px;color:var(--muted)}
 #dot{width:8px;height:8px;border-radius:50%;background:var(--red);transition:background .3s}
 #dot.on{background:var(--green)}
 
-main{display:grid;grid-template-columns:calc(var(--bsz)+56px) 1fr;flex:1;min-height:0;overflow:hidden}
+main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
 
-#chess{display:flex;flex-direction:column;align-items:center;justify-content:center;
-       padding:14px 18px;background:var(--surf);border-right:1px solid var(--line)}
+#chess{width:calc(var(--bsz)+56px);flex-shrink:0;display:flex;flex-direction:column;
+       align-items:center;justify-content:center;
+       padding:14px 18px;background:var(--surf);border-right:1px solid var(--line);overflow:hidden}
 .prow{width:var(--bsz);display:flex;align-items:center;gap:8px;padding:7px 0}
 .prow .av{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--line);
           background:var(--surf2);display:flex;align-items:center;justify-content:center;font-size:13px}
@@ -57,7 +58,7 @@ main{display:grid;grid-template-columns:calc(var(--bsz)+56px) 1fr;flex:1;min-hei
           color:var(--muted);min-height:18px;max-height:52px;overflow-y:auto;line-height:1.85}
 .mn{color:var(--muted)}.mw,.mb{color:var(--ink2)}.mw{margin:0 3px 0 1px}.mb{margin-right:7px}
 
-#chat{display:flex;flex-direction:column;min-height:0;overflow:hidden}
+#chat{flex:1 1 0;min-width:0;display:flex;flex-direction:column;overflow:hidden}
 #flow-strip{display:flex;align-items:center;padding:6px 14px;
             background:var(--blue-s);border-bottom:1px solid var(--line);
             font-family:var(--mono);font-size:11px;color:var(--muted);

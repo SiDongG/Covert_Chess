@@ -43,9 +43,11 @@ class DemoSession:
 
         # IMPORTANT: adapter_cfg.p_field MUST equal bam_cfg.p_field
         cfg_bam = bam_cfg or BAMConfig(
-            gamma_1=0.85, gamma_2=0.99,
+            eps_noise_comm=0.5,
+            eps_noise_conf=0.3,
+            gamma_1=0.85,
             rho_ack=0.95, rho_nack=0.95,
-            p_field=4, eps_noise=0.5,
+            p_field=4,
         )
         cfg_arc = adapter_cfg or ArcMarkConfig(
             p_field=4,          # must match cfg_bam.p_field
