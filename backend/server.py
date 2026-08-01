@@ -2,8 +2,6 @@
 
 Run (from backend/ directory):
     uvicorn server:app --host 0.0.0.0 --port 8000 --workers 1
-
-workers MUST be 1: the shared model lives in a single process.
 """
 from __future__ import annotations
 import os
@@ -13,10 +11,10 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from backend.lm_backend_shared import SharedModelPool
-from bam.bam_tracker    import BAMConfig           # ← bam package
+from lm_backend_shared import SharedModelPool
+from bam.bam_tracker   import BAMConfig
 from bam.arcmark_adapter import ArcMarkConfig
-from backend.session             import DemoSession
+from session           import DemoSession
 
 MODEL_NAME     = os.getenv("MODEL_NAME",     "meta-llama/Llama-3.1-8B-Instruct")
 STOCKFISH_PATH = os.getenv("STOCKFISH_PATH", "/usr/games/stockfish")
@@ -59,9 +57,7 @@ async def ws_endpoint(websocket: WebSocket, session_id: str) -> None:
 
     if session_id not in sessions:
         if len(sessions) >= MAX_SESSIONS:
-            await websocket.send_json(
-                {"type": "error", "msg": "Server at capacity — try again later."}
-            )
+            await websocket.send_json({"type": "error", "msg": "Server at capacity."})
             await websocket.close()
             return
         sessions[session_id] = DemoSession(
@@ -69,19 +65,13 @@ async def ws_endpoint(websocket: WebSocket, session_id: str) -> None:
             lm2=pool.make_backend(),
             stockfish_path=STOCKFISH_PATH,
             bam_cfg=BAMConfig(
-                eps_noise_comm=0.5,
-                eps_noise_conf=0.3,
-                gamma_1=0.85,
-                rho_ack=0.95, rho_nack=0.95,
-                p_field=4,
+                eps_noise_comm=0.5, eps_noise_conf=0.3,
+                gamma_1=0.85, rho_ack=0.95, rho_nack=0.95, p_field=4,
             ),
             adapter_cfg=ArcMarkConfig(
-                p_field=4, r_resolution=8,
-                shared_seed=0xA12C, top_k=50,
-                sinkhorn_max_iter=1000,
-                sinkhorn_stop_thr=1e-4,
-                sinkhorn_reg=0.2,
-                sinkhorn_method="sinkhorn_log",
+                p_field=4, r_resolution=8, shared_seed=0xA12C, top_k=50,
+                sinkhorn_max_iter=1000, sinkhorn_stop_thr=1e-4,
+                sinkhorn_reg=0.2, sinkhorn_method="sinkhorn_log",
             ),
         )
 
