@@ -16,7 +16,7 @@ from bam.arcmark_adapter  import ArcMarkAdapter, ArcMarkConfig
 from bam.bam_encoder      import CovertEncoder
 from bam.bam_decoder      import Decoder
 from bam.bam_tracker      import BAMTracker, BAMConfig
-from chess_engine          import ChessInterface
+from backend.chess_engine          import ChessInterface
 
 Sender = Callable[[dict], Any]
 

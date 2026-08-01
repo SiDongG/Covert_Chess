@@ -13,10 +13,10 @@ from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from lm_backend_shared import SharedModelPool
+from backend.lm_backend_shared import SharedModelPool
 from bam.bam_tracker    import BAMConfig           # ← bam package
 from bam.arcmark_adapter import ArcMarkConfig
-from session             import DemoSession
+from backend.session             import DemoSession
 
 MODEL_NAME     = os.getenv("MODEL_NAME",     "meta-llama/Llama-3.1-8B-Instruct")
 STOCKFISH_PATH = os.getenv("STOCKFISH_PATH", "/usr/games/stockfish")
