@@ -107,11 +107,13 @@ strong { color: var(--ink); font-weight: 600; }
 .cover-cta { margin-top: 24px; }
 
 /* cover authors strip */
-.cover-authors { display: flex; align-items: center; gap: 14px; margin-top: 26px; flex-wrap: wrap; }
-.cover-authors .org-logo { height: 26px; width: auto; object-fit: contain; opacity: .85; }
-.cover-authors .ca-names { font-family: var(--font-mono); font-size: 13px; color: var(--ink-2); }
-.cover-authors .ca-sep { color: var(--muted); }
-.cover-authors .ca-affil { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
+.cover-authors { display: flex; align-items: flex-start; gap: 28px; margin-top: 28px; flex-wrap: wrap; }
+.ca-author { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+.ca-author .ca-name { font-family: var(--font-mono); font-size: 13px; color: var(--ink-2); }
+.ca-author .ca-name a { color: var(--ink-2); }
+.ca-author .ca-name a:hover { color: var(--accent); text-decoration: none; }
+.ca-author .ca-logo { height: 22px; width: auto; max-width: 100px; object-fit: contain; opacity: .9; }
+.cover-authors .ca-sep { font-family: var(--font-mono); font-size: 18px; color: var(--muted); margin-top: 8px; }
 .scroll-cue { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; }
 .scroll-cue:hover { color: var(--accent); text-decoration: none; }
 .scroll-cue span { display: block; text-align: center; font-size: 16px; margin-top: 4px; animation: bob 2s ease-in-out infinite; }
@@ -275,15 +277,22 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
       <a class="btn" href="#gap">See how it works</a>
     </div>
 
-    <!-- authors on front page -->
+    <!-- authors on front page: name above, college logo below -->
     <div class="cover-authors">
-      <span class="ca-names">
-        <a href="https://sidongg.github.io/" style="color:var(--ink-2)">Sidong Guo</a>
-        <span class="ca-sep"> · </span>[Author Two]<span class="ca-sep"> · </span>[Author Three]
-      </span>
-    </div>
-    <div class="cover-authors" style="margin-top:6px">
-      <span class="ca-affil">Harvard University, Information Theory Lab · Georgia Institute of Technology</span>
+      <div class="ca-author">
+        <span class="ca-name"><a href="https://sidongg.github.io/">Sidong Guo</a></span>
+        <img class="ca-logo" src="./img/gtlogo.png" alt="Georgia Tech" onerror="this.style.display='none'"/>
+      </div>
+      <span class="ca-sep">·</span>
+      <div class="ca-author">
+        <span class="ca-name">[Author Two]</span>
+        <img class="ca-logo" src="./img/seaslogo.png" alt="Harvard SEAS" onerror="this.style.display='none'"/>
+      </div>
+      <span class="ca-sep">·</span>
+      <div class="ca-author">
+        <span class="ca-name">[Author Three]</span>
+        <img class="ca-logo" src="./img/asulogo.png" alt="ASU" onerror="this.style.display='none'"/>
+      </div>
     </div>
   </div>
   <a class="scroll-cue" href="#gap">scroll<span>↓</span></a>
