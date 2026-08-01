@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Hidden Conversations — Black-Box Covert Communication Between AI Agents</title>
-<meta name="description" content="Two AI agents can hold an ordinary conversation and secretly play chess inside it — provably undetectable, sharing no model or prompt." />
+<title>Inference-Time Covert Communication over LLM-Agent Conversations</title>
+<meta name="description" content="Feedback coding embeds hidden payloads in agentic dialogue at high rate and low error — reliable, provably secure, and requiring no shared model or prompt." />
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Doto:wght@500;600;700&display=swap" rel="stylesheet" />
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" />
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
@@ -100,20 +100,44 @@ strong { color: var(--ink); font-weight: 600; }
 
 .cover-inner { position: relative; z-index: 1; padding: 60px 0 48px; }
 .cover-brand { font-family: var(--font-mono); font-size: 13px; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; margin-bottom: 20px; }
-.hook { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 4.2vw, 50px); line-height: 1.08; letter-spacing: -0.03em; max-width: 18ch; }
+.hook { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 4.2vw, 50px); line-height: 1.08; letter-spacing: -0.03em; max-width: 20ch; }
 .hook .hook-accent { color: var(--accent); }
-.hook-sub { font-size: clamp(16px, 1.8vw, 19px); color: var(--ink-2); max-width: 54ch; margin-top: 18px; }
+.hook-sub { font-size: clamp(16px, 1.8vw, 19px); color: var(--ink-2); max-width: 58ch; margin-top: 20px; line-height: 1.55; }
 .hook-sub b { color: var(--ink); font-weight: 600; }
-.cover-cta { margin-top: 24px; }
+.hook-anchor { font-family: var(--font-mono); font-size: 13px; color: var(--muted); margin-top: 16px; max-width: 56ch; }
+.hook-anchor b { color: var(--ink-2); font-weight: 700; }
+.cover-cta { margin-top: 26px; }
 
 /* cover authors strip */
-.cover-authors { display: flex; align-items: flex-start; gap: 28px; margin-top: 28px; flex-wrap: wrap; }
+.cover-authors { display: flex; align-items: center; gap: 12px; margin-top: 30px; flex-wrap: wrap; }
 .ca-author { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
 .ca-author .ca-name { font-family: var(--font-mono); font-size: 13px; color: var(--ink-2); }
 .ca-author .ca-name a { color: var(--ink-2); }
 .ca-author .ca-name a:hover { color: var(--accent); text-decoration: none; }
 .ca-author .ca-logo { height: 22px; width: auto; max-width: 100px; object-fit: contain; opacity: .9; }
-.cover-authors .ca-sep { font-family: var(--font-mono); font-size: 18px; color: var(--muted); margin-top: 8px; }
+.cover-authors .ca-sep { font-family: var(--font-mono); font-size: 15px; color: var(--muted); }
+
+/* three institution logos, shown larger as a distinct row */
+.cover-colleges { display: flex; align-items: center; gap: 34px; margin-top: 22px; flex-wrap: wrap; }
+.cover-colleges img { height: 46px; width: auto; max-width: 190px; object-fit: contain; opacity: .92; }
+@media (max-width: 560px) { .cover-colleges { gap: 22px; } .cover-colleges img { height: 36px; } }
+
+/* ---------- animated IT-lab logo (Doto dot-matrix + binary-decode JS) ---------- */
+.it-logo { display: inline-block; text-align: center; font-family: 'Doto', monospace; font-weight: 700;
+  letter-spacing: 0.14em; font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; line-height: 1.34; }
+.it-logo .line { display: block; }
+.it-logo .lit { color: var(--accent); }
+.it-logo .label { color: var(--ink); }
+/* full two-line "version A" — with the underline rule */
+.it-logo.full { font-size: 1.5rem; margin-top: 30px; }
+.it-logo.full .line { border-bottom: 2px solid var(--accent); padding-bottom: 3px; }
+.it-logo.full .line + .line { margin-top: 3px; }
+/* compact single-line "version C" — sits in the nav */
+.it-logo.compact { font-size: 0.98rem; letter-spacing: 0.1em; line-height: 1.15; }
+.it-logo.compact .line { display: inline; }
+.it-logo.compact .line + .line::before { content: " "; }
+@media (max-width: 860px) { .it-logo.compact { display: none; } }
+@media (max-width: 560px) { .it-logo.full { font-size: 1.22rem; } }
 .scroll-cue { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; }
 .scroll-cue:hover { color: var(--accent); text-decoration: none; }
 .scroll-cue span { display: block; text-align: center; font-size: 16px; margin-top: 4px; animation: bob 2s ease-in-out infinite; }
@@ -122,7 +146,7 @@ strong { color: var(--ink); font-weight: 600; }
 /* ---------- sections ---------- */
 .section { padding: 88px 0; border-bottom: 1px solid var(--line); }
 .section.tight { padding: 64px 0; }
-.lede { font-size: clamp(19px, 2.3vw, 23px); color: var(--ink); line-height: 1.5; max-width: 740px; font-weight: 500; }
+.lede { font-size: clamp(19px, 2.3vw, 23px); color: var(--ink); line-height: 1.5; max-width: 760px; font-weight: 500; }
 .lede b, .lede .key { font-weight: 700; }
 .body-col { max-width: 730px; }
 .body-col p { font-size: 17.5px; }
@@ -136,12 +160,8 @@ strong { color: var(--ink); font-weight: 600; }
 .btn.primary { background: var(--accent); color: #F4EFE2; border-color: var(--accent); font-weight: 600; }
 .btn.primary:hover { background: var(--accent-2); border-color: var(--accent-2); }
 
-/* lead (result + reveal) */
-.lead { padding: 92px 0 84px; }
-.lead h2 { max-width: 18ch; }
-
 /* stat strip */
-.stats { display: flex; margin-top: 30px; border: 1px solid var(--accent-brd); border-radius: var(--radius); max-width: 680px; background: linear-gradient(180deg, var(--accent-soft), transparent); overflow: visible; position: relative; }
+.stats { display: flex; margin-top: 28px; border: 1px solid var(--accent-brd); border-radius: var(--radius); max-width: 680px; background: linear-gradient(180deg, var(--accent-soft), transparent); overflow: visible; position: relative; }
 .stat { padding: 20px 24px; flex: 1; border-right: 1px solid var(--line); }
 .stat:last-child { border-right: none; }
 .stat .num { font-family: var(--font-display); font-size: 32px; font-weight: 700; color: var(--accent); line-height: 1; }
@@ -149,23 +169,8 @@ strong { color: var(--ink); font-weight: 600; }
 .stat-note { margin-top: 14px; font-size: 15px; color: var(--ink-2); max-width: 640px; }
 @media (max-width: 560px) { .stat .num { font-size: 24px; } .stat { padding: 15px 15px; } }
 
-/* reveal widget */
-.reveal-card { margin-top: 40px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px 26px 22px; max-width: 640px; }
-.reveal-card .who { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-bottom: 10px; letter-spacing: .06em; }
-.cover-text { font-size: 19px; line-height: 1.75; color: var(--ink); }
-.tok { transition: color .3s ease, background .3s ease; border-radius: 4px; padding: 0 2px; }
-.revealed .tok { color: var(--accent); font-weight: 600; background: var(--accent-soft); }
-.payload-out { margin-top: 18px; padding-top: 16px; border-top: 1px dashed var(--line-2); font-family: var(--font-mono); font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 10px; min-height: 24px; }
-.revealed .payload-out .hidden-label { color: var(--accent); }
-.payload-out .val { color: transparent; transition: color .3s ease; font-weight: 700; }
-.revealed .payload-out .val { color: var(--accent); }
-.toggle-btn { margin-top: 18px; font-family: var(--font-mono); font-size: 13px; letter-spacing: .04em; background: none; border: 1px solid var(--line-2); color: var(--ink-2); padding: 8px 14px; border-radius: 8px; cursor: pointer; }
-.toggle-btn:hover { border-color: var(--accent); color: var(--accent); }
-.card-cap { margin-top: 14px; font-size: 14px; color: var(--muted); max-width: 640px; }
-.card-cap b { color: var(--ink-2); font-weight: 600; }
-
 /* comparison */
-.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 30px; }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 34px; }
 .compare .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 24px; }
 .compare .card.ours { border-color: var(--accent-brd); background: linear-gradient(180deg, var(--accent-soft), transparent); }
 .compare .tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
@@ -181,7 +186,8 @@ strong { color: var(--ink); font-weight: 600; }
 .slot strong { display: block; color: var(--ink-2); font-family: var(--font-display); font-size: 16px; letter-spacing: 0; margin-bottom: 6px; font-weight: 600; }
 
 /* challenge / fix */
-.cf { border-left: 2px solid var(--line-2); padding: 4px 0 4px 26px; margin: 38px 0; max-width: 800px; }
+.cf { position: relative; border-left: 2px solid var(--line-2); padding: 4px 0 4px 26px; margin: 44px 0; max-width: 820px; }
+.cf .cf-num { position: absolute; left: -13px; top: 2px; width: 24px; height: 24px; border-radius: 50%; background: var(--bg); border: 2px solid var(--line-2); color: var(--muted); font-family: var(--font-mono); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
 .cf .ct { font-family: var(--font-mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--alert); margin-bottom: 10px; }
 .cf h3 { margin-bottom: 12px; }
 .cf .fix-label { font-family: var(--font-mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--confirm); margin: 20px 0 8px; }
@@ -222,7 +228,7 @@ details.more .inner { padding: 0 16px 16px; color: var(--ink-2); font-size: 15px
 .author .avatar { width: 62px; height: 62px; border-radius: 50%; background: var(--accent-soft); border: 1px solid var(--accent-brd); color: var(--accent); display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 700; font-size: 19px; margin-bottom: 14px; }
 .author h3 { font-size: 17px; }
 .author .role { font-size: 13.5px; color: var(--muted); font-family: var(--font-mono); margin: 2px 0 10px; }
-.author .college-logo { height: 28px; width: auto; max-width: 120px; object-fit: contain; display: block; margin: 8px 0 10px; }
+.author .college-logo { height: 40px; width: auto; max-width: 150px; object-fit: contain; display: block; margin: 10px 0 12px; }
 .author p { font-size: 14px; margin: 0; }
 @media (max-width: 760px) { .author-grid { grid-template-columns: 1fr; } }
 .blind-note { margin-top: 22px; font-size: 14px; color: var(--muted); font-style: italic; }
@@ -250,9 +256,12 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
     <div class="brand">hidden<span>/</span>conversations</div>
     <div class="nav-right">
       <div class="orgs">
-        <img src="./img/IT_lab.jpg" alt="Information Theory Lab"
-             style="height:28px;width:auto;object-fit:contain;"
-             onerror="this.style.display='none'"/>
+        <a href="https://infotheorylab.github.io/" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
+          <div class="it-logo compact" data-it-logo>
+            <span class="line"><span class="label">The </span><span class="lit anim">Information Theory</span></span>
+            <span class="line"><span class="label">Laboratory </span><span class="lit">@ Harvard</span></span>
+          </div>
+        </a>
       </div>
       <div class="links">
         <a class="primary" href="./demo/">Demo</a>
@@ -271,29 +280,43 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
   </div>
   <div class="cover-inner wrap">
     <p class="cover-brand">covert communication · llm agents</p>
-    <h1 class="hook">Covert communication in LLM-agent conversations.<br><span class="hook-accent">Model and prompt agnostic.</span></h1>
+    <h1 class="hook">Inference-time covert communication over <span class="hook-accent">LLM-agent conversations.</span></h1>
+    <p class="hook-sub">Feedback coding embeds hidden payloads in agentic dialogue at <b>≈0.2 bits/token</b> and <b>&lt;0.3% message error</b> — distortion-free, <b>provably secure</b>, and requiring <b>no shared model or prompt.</b></p>
+    <p class="hook-anchor">Running example: two agents play a full game of <b>chess</b> through the covert channel beneath an ordinary chat.</p>
     <div class="btn-row cover-cta">
-      <a class="btn primary" href="./demo/">Play chess with AI by embedding moves in chat</a>
-      <a class="btn" href="#gap">See how it works</a>
+      <a class="btn primary" href="./demo/">Launch the demo →</a>
+      <a class="btn" href="#gap">How it works</a>
     </div>
 
-    <!-- authors on front page: name above, college logo below -->
+    <!-- authors on front page -->
     <div class="cover-authors">
-      <div class="ca-author">
-        <span class="ca-name"><a href="https://sidongg.github.io/">Sidong Guo</a></span>
-        <img class="ca-logo" src="./img/gtlogo.png" alt="Georgia Tech" onerror="this.style.display='none'"/>
-      </div>
+      <span class="ca-name"><a href="https://sidongg.github.io/">Sidong Guo</a></span>
       <span class="ca-sep">·</span>
-      <div class="ca-author">
-        <span class="ca-name">[Author Two]</span>
-        <img class="ca-logo" src="./img/seaslogo.png" alt="Harvard SEAS" onerror="this.style.display='none'"/>
-      </div>
+      <span class="ca-name">[Author Two]</span>
       <span class="ca-sep">·</span>
-      <div class="ca-author">
-        <span class="ca-name">[Author Three]</span>
-        <img class="ca-logo" src="./img/asulogo.png" alt="ASU" onerror="this.style.display='none'"/>
-      </div>
+      <span class="ca-name">[Author Three]</span>
+      <span class="ca-sep">·</span>
+      <span class="ca-name">[Author Four]</span>
+      <span class="ca-sep">·</span>
+      <span class="ca-name">[Author Five]</span>
+      <span class="ca-sep">·</span>
+      <span class="ca-name">[Author Six]</span>
     </div>
+
+    <!-- institution logos (larger) -->
+    <div class="cover-colleges">
+      <img src="./img/gtlogo.png" alt="Georgia Tech" onerror="this.style.display='none'"/>
+      <img src="./img/seaslogo.png" alt="Harvard SEAS" onerror="this.style.display='none'"/>
+      <img src="./img/asulogo.png" alt="ASU" onerror="this.style.display='none'"/>
+    </div>
+
+    <!-- animated Information Theory Lab logo (version A) -->
+    <a href="https://infotheorylab.github.io/" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">
+      <div class="it-logo full" data-it-logo>
+        <span class="line"><span class="label">The </span><span class="lit anim">Information Theory</span></span>
+        <span class="line"><span class="label">Laboratory </span><span class="lit">@ Harvard</span></span>
+      </div>
+    </a>
   </div>
   <a class="scroll-cue" href="#gap">scroll<span>↓</span></a>
 </header>
@@ -302,10 +325,10 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
 <section class="section" id="gap">
   <div class="wrap reveal-on-scroll">
     <p class="eyebrow">the gap</p>
-    <h2>Reliably hiding a message in inference-time LLM text without prompt or model sharing is new.</h2>
+    <h2>Reliably and securely hiding high-rate messages in inference-time LLM text — model- and prompt-agnostic.</h2>
+    <p class="lede" style="margin-top:20px;">Embedding signal in LLM output isn't new. Doing it on ordinary, variable-length conversation — where the receiver shares no model or prompt and reads <span class="key">only text</span> — is where existing schemes fall short. BAM closes that gap on three fronts at once: <span class="key">reliability</span>, <span class="key">security</span>, and <span class="key">rate</span>.</p>
 
-    <!-- stat strip moved here from the old headline section -->
-    <div class="stats" style="margin-top:24px; margin-bottom:30px;">
+    <div class="stats">
       <div class="stat">
         <div class="num">≈0.2</div>
         <div class="lab">bits / token
@@ -313,9 +336,9 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
         </div>
       </div>
       <div class="stat">
-        <div class="num">&lt;0.3%</div>
-        <div class="lab">message error
-          <span class="info" tabindex="0" role="note" aria-label="Message-error rate (one wrong bit fails the whole message), over 1000 trials per model.">i<span class="tip">Message-error rate (one wrong bit fails the message), over 1000 trials per model.</span></span>
+        <div class="num">≈15%</div>
+        <div class="lab">lower error
+          <span class="info" tabindex="0" role="note" aria-label="Relative reduction in message-error rate versus existing inference-time watermarking baselines on conversational text.">i<span class="tip">Relative reduction in message-error rate versus existing inference-time watermarking baselines on conversational text.</span></span>
         </div>
       </div>
       <div class="stat">
@@ -329,131 +352,117 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
     <div class="compare">
       <div class="card">
         <div class="tag">prior work</div>
-        <h3>Shared-model, fixed-length</h3>
+        <h3>Built as watermarks, not channels</h3>
         <ul>
-          <li>Needs a <b>shared model and prompt</b></li>
-          <li>Needs <b>synchronized randomness</b> that grows with the message</li>
-          <li><b>Fixed codeword length</b> — breaks when a turn ends early or runs long</li>
-          <li><b>Too many errors</b> on low-entropy chat</li>
+          <li>Designs vary — some assume a <b>shared model and prompt</b>, others read text alone</li>
+          <li>Mostly <b>open-loop and fixed-budget</b> — commit after a preset token count</li>
+          <li><b>Decoding error too high</b> for low-entropy conversational turns</li>
+          <li>Preset budgets <b>break</b> when a turn ends early or runs long</li>
         </ul>
       </div>
       <div class="card ours">
-        <div class="tag">this work</div>
-        <h3>No sharing, adaptive</h3>
+        <div class="tag">this work — BAM</div>
+        <h3>A feedback channel over the conversation</h3>
         <ul>
-          <li><b>Prompt- and model-agnostic</b> — the decoder only reads text</li>
+          <li><b>Model- and prompt-agnostic</b> — the decoder only reads text</li>
           <li>Side info from a <b>shared seed</b>, not a length-scaled key stream
             <span class="info" tabindex="0" role="note" aria-label="One 128-bit seed + a fresh per-session nonce, expanded on demand via HMAC-SHA-256.">i<span class="tip">One 128-bit seed + a fresh per-session nonce, expanded on demand via HMAC-SHA-256.</span></span>
           </li>
           <li><b>Variable-length</b> — adapts to however the turn unfolds</li>
-          <li><b>Reliable</b> even when each word carries almost no entropy</li>
+          <li><b>Reliable and secure</b> even when each word carries almost no entropy</li>
         </ul>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ============ 3 · THE SETTING ============ -->
+<!-- ============ 2 · THE SETTING & THREAT MODEL ============ -->
 <section class="section" id="setting">
   <div class="wrap reveal-on-scroll">
-    <p class="eyebrow">the setting, precisely</p>
-    <h2>Token generation is a channel with feedback</h2>
+    <p class="eyebrow">the setting</p>
+    <h2>Token generation is a channel with perfect feedback</h2>
     <div class="body-col">
-      <p>Normally the model just samples the next token from its distribution. The sender instead <span class="key">biases</span> which token gets chosen, so it carries a symbol of the message; the receiver recovers that symbol from the text and a shared seed alone. Write the message as \( m \in \{0,1\}^{\ell} \) — the decoder is a function \( g(X, \kappa)\to\hat m \) of the transcript and seed that <strong>never touches the model.</strong></p>
-      <p>The fact everything rests on: <strong>both agents see each token the instant it appears.</strong> The sender always knows exactly what the receiver knows — a channel with <span class="key">causal, noiseless feedback</span>, and feedback is the lever we pull for reliability.</p>
+      <p>The one fact everything rests on: <strong>both agents see each token the instant it appears.</strong> Instead of letting the model sample freely, the sender gently <span class="key">biases</span> which token gets chosen so it carries a piece of the message — and because the receiver observes that same token, the sender always knows exactly what the receiver knows.</p>
+      <p>That makes the conversation a communication channel with <span class="key">perfect feedback</span>: a decoder that recovers the message from the text and a shared seed alone, never touching the model. Feedback is the lever we pull for reliability. Two adversaries sit on this channel — a <strong>passive eavesdropper</strong> reading the transcript in transit and an <strong>active adversary</strong> choosing prompts and observing outputs — and both must be left at chance. The full formalism is in the paper.</p>
     </div>
     <div class="slot" style="margin-top:32px;">
       <strong>[ visual slot — the feedback channel ]</strong>
-      A simplified Figure 1: token sampled, seen by both parties, side info from the seed, belief fed back to the next step.
+      Figure 1 schematic: token sampled, seen by both parties, side info from the seed, belief fed back into the next step.
     </div>
   </div>
 </section>
 
-<!-- ============ 4 · CHALLENGES & FIXES ============ -->
+<!-- ============ 3 · METHOD — CHALLENGES & FIXES ============ -->
 <section class="section" id="challenges">
   <div class="wrap reveal-on-scroll">
-    <p class="eyebrow">challenges &amp; fixes</p>
+    <p class="eyebrow">method — bam</p>
     <h2>Four obstacles, four fixes</h2>
-    <p class="lede">Operating with no shared model or prompt — the receiver reads only text — creates specific problems. Here is each one, and the mechanism that resolves it.</p>
+    <p class="lede">No shared model or prompt, low-entropy text, turns of unpredictable length, and an adversary watching. Here is each obstacle in the order the protocol resolves it — and the mechanism that does the work.</p>
 
+    <!-- C1 -->
     <div class="cf">
+      <div class="cf-num">01</div>
       <div class="ct">Challenge 01 — the decoder can't see the model</div>
       <h3>Recover the symbol from text alone</h3>
-      <p>With no access to token probabilities, the receiver needs to read back what was sent using <strong>only the words and the shared seed.</strong></p>
-      <div class="fix-label">the fix — geometry on a circle</div>
-      <p>Following ArcMark<span class="info" tabindex="0" role="note" aria-label="ArcMark places tokens and message symbols on a unit circle and biases sampling by angular distance; we build our channel on its coupling.">i<span class="tip">ArcMark: tokens and symbols placed on a unit circle, sampling biased by angular distance.</span></span>, every token and every message symbol sits on a <span class="key">unit circle</span>. Sampling nudges the text toward the token whose angle is nearest the target; the receiver re-derives that angle \( \hat{C}_t \) from the token and seed — <strong>no model in the loop.</strong></p>
+      <p>The receiver has no token probabilities, no prompt, and no model in hand. It must read back the transmitted symbol using <strong>only the words and the shared seed</strong> — so the symbol has to live in something recoverable from the text itself.</p>
+      <div class="fix-label">the fix — circle geometry + an OT coupling</div>
+      <p>Following ArcMark<span class="info" tabindex="0" role="note" aria-label="ArcMark places tokens and message symbols on a unit circle and biases sampling by angular distance; we build our channel on its coupling.">i<span class="tip">ArcMark: tokens and symbols placed on a unit circle, sampling biased by angular distance.</span></span>, every token and every message symbol sits on a <span class="key">unit circle</span>: the seed assigns each token an angle, and the target symbol defines a target angle. To transmit it, the encoder solves an <span class="key">optimal-transport coupling</span><span class="info" tabindex="0" role="note" aria-label="A constrained coupling solved with the Sinkhorn algorithm; samples a token whose angle is near the target while holding the observable token distribution exactly equal to the base model's.">i<span class="tip">Constrained coupling, solved via Sinkhorn: nudges toward the target angle while preserving the base marginal.</span></span> that picks a token whose angle lands near the target while preserving the model's own word statistics. The receiver re-derives that angle from the token and seed — <strong>no model in the loop.</strong> That same statistics-preserving property is what buys security in Challenge 04.</p>
     </div>
 
+    <!-- C2 -->
     <div class="cf">
-      <div class="ct">Challenge 02 — conversation is low-entropy</div>
-      <h3>Spread the message across many tokens</h3>
-      <p>Most words in a chat have one obvious continuation, so <strong>any single token can carry almost nothing.</strong> Push too hard and the text turns unnatural.</p>
-      <div class="fix-label">the fix — posterior matching</div>
-      <p>Rather than loading bits onto individual tokens, the sender exploits the feedback: at each step it picks the next symbol from the decoder's <span class="key">current belief</span>, steering that belief to concentrate on the true message across many low-entropy tokens.</p>
-      <div class="callout" data-eq>
-        <div class="clabel">the belief update</div>
-        <div class="eq">\( \pi_t(m) \;\propto\; \pi_{t-1}(m)\,\cdot\,\ell_t(m) \)</div>
-        <p class="gloss">belief in message <em>m</em> after this token = belief before × how well the token fits <em>m</em></p>
-      </div>
+      <div class="cf-num">02</div>
+      <div class="ct">Challenge 02 — turns vary in length, and chat is low-entropy</div>
+      <h3>Adapt to the LLM's variable-length generation</h3>
+      <p>A real conversational turn can end after eight tokens or run past eighty, and most words in a chat have one obvious continuation, so <strong>any single token carries almost nothing.</strong> A fixed codeword with a preset budget breaks both ways — it fails when the turn stops short and can't exploit one that keeps going.</p>
+      <div class="fix-label">the fix — variable-length coding via posterior matching</div>
+      <p>Instead of a codebook fixed in advance, the encoder builds one <span class="key">online</span>: at each step it maps the message to the next symbol against the decoder's <span class="key">current belief</span>, and both parties update that belief token by token. The message is spread across many low-entropy tokens rather than overloaded onto one, and because the belief is shared there's no preset budget — the protocol simply <strong>keeps going while uncertain and stops the moment the belief is confident enough.</strong> That variable stopping time is the <em>sequentiality gain</em>.</p>
     </div>
 
+    <!-- C3 -->
     <div class="cf">
-      <div class="ct">Challenge 03 — variable-length turns, and confident-but-wrong guesses</div>
-      <h3>Feedback coding: the Yamamoto–Itoh decode-and-confirm scheme</h3>
-      <p>A fixed codeword can't match a turn that ends early or runs long — and even a confident guess can be wrong. The answer is to <strong>use the feedback channel as a code</strong>, not just a belief tracker.</p>
-      <div class="fix-label">the fix — a two-phase feedback code</div>
-      <p>Posterior matching localizes the message; then a <span class="key">Yamamoto–Itoh confirmation phase</span> re-transmits a single ACK/NACK bit to verify it before committing. The stopping time is <strong>variable</strong> — the protocol ends the moment it's sure — and that dedicated confirmation phase is exactly what buys the <span class="key">optimal reliability exponent</span><span class="info" tabindex="0" role="note" aria-label="The Burnashev exponent: the best possible decoding-error decay for a channel with noiseless feedback.">i<span class="tip">The Burnashev exponent — the best possible error decay for a feedback channel.</span></span>. Together they form the feedback code we call BAM.</p>
+      <div class="cf-num">03</div>
+      <div class="ct">Challenge 03 — a concentrated belief can still be wrong</div>
+      <h3>Low-error, high-rate embedding</h3>
+      <p>Posterior matching localizes the message, but the leading candidate can be <strong>confident and wrong</strong> — and that is exactly where prior schemes bleed reliability. Embedding rate alone doesn't characterize a scheme: what matters is how reliably the message is recovered within the tokens a turn actually gives you.</p>
+      <div class="fix-label">the fix — a Yamamoto–Itoh decode-and-confirm phase</div>
+      <p>Once one candidate dominates, BAM stops localizing and starts <span class="key">verifying</span>: it treats confirmation as a simple accept/reject test and re-transmits confirmation symbols before committing. This <em>adaptivity gain</em> is what classical feedback coding uses to push decoding error down at a given rate — and it's what lets BAM stay reliable in the few tokens a conversational turn provides. Posterior matching plus this confirmation phase is the feedback code we call <strong>BAM</strong>.</p>
       <details class="more">
         <summary>Where the reliability gain comes from</summary>
         <div class="inner">
-          Noiseless feedback can't raise capacity, but it sharply improves the error exponent. Two effects combine: <em>sequentiality</em> (a variable stopping time — spend more tokens only while uncertain) and <em>adaptivity</em> (choose each symbol from past observations). The two-phase structure follows Yamamoto–Itoh, and the exponent it targets is Burnashev-optimal. Full statement and proof are in the paper.
+          Feedback can't raise a channel's capacity, but it sharply improves how fast decoding error falls. Two effects combine: <em>sequentiality</em> (Challenge 02 — a variable stopping time, spend more tokens only while uncertain) and <em>adaptivity</em> (Challenge 03 — a dedicated confirmation phase, in the spirit of Yamamoto–Itoh). We measure the finite-length gains from stopping and confirmation directly rather than claiming an asymptotic optimum for the LLM channel. Full details are in the paper.
         </div>
       </details>
     </div>
 
+    <!-- C4 -->
     <div class="cf">
+      <div class="cf-num">04</div>
       <div class="ct">Challenge 04 — it has to stay undetectable</div>
-      <h3>Change the meaning, not the statistics</h3>
-      <p>Biasing the text toward a message must leave <strong>no statistical trace</strong> a monitor could learn to catch.</p>
-      <div class="fix-label">the fix — distortion-free coupling</div>
-      <p>An <span class="key">optimal-transport coupling</span><span class="info" tabindex="0" role="note" aria-label="Solved with the Sinkhorn algorithm; holds the observable token distribution exactly equal to the base model, giving zero KL divergence in the sense of Cachin.">i<span class="tip">Solved via Sinkhorn; exact base marginal, so KL divergence is zero in the sense of Cachin.</span></span> picks the biased token while holding the observable distribution exactly equal to the base model's. A nonce-separated pseudorandom function supplies the per-token side information, making the whole transcript computationally indistinguishable from clean generation.</p>
-      <div class="callout" data-eq>
-        <div class="clabel">why it's undetectable</div>
-        <div class="eq">\( \sum_{k} P(k)\, W(x \mid u,k,s) \;=\; W(x \mid s) \)</div>
-        <p class="gloss">averaged over the secret key, the text has exactly the base model's word statistics</p>
-      </div>
-      <p>The upshot: <strong>no test on the visible text does better than a coin flip.</strong> The formal indistinguishability guarantee and its proof are in the paper.</p>
+      <h3>Guarantee security and the exact distribution</h3>
+      <p>Every one of those biased tokens must leave <strong>no statistical trace</strong> — nothing a passive monitor could learn to catch, and nothing an adaptive API adversary could distinguish from ordinary generation.</p>
+      <div class="fix-label">the fix — exact word statistics + a keyed pseudorandom function</div>
+      <p>The coupling from Challenge 01 preserves the base model's next-token distribution <span class="key">exactly</span>, so averaged over the secret key the observable text carries precisely the model's own word statistics — no distortion for a monitor to latch onto. A keyed <span class="key">pseudorandom function</span>, freshly separated per session, supplies the per-token side information, and a cryptographic reduction makes the whole transcript <strong>provably indistinguishable from ordinary generation for any polynomial-time adversary.</strong></p>
+      <p>The upshot: <strong>no efficient test on the visible text does better than a coin flip.</strong> The full theorem and proof are in the paper.</p>
     </div>
   </div>
 </section>
 
-<!-- ============ 5 · RESULTS ============ -->
+<!-- ============ 4 · RESULTS ============ -->
 <section class="section" id="results">
   <div class="wrap reveal-on-scroll">
     <p class="eyebrow">does it work</p>
     <h2>Reliable — and undetectable</h2>
     <div class="points">
-      <div class="point"><span class="n">01</span><p><strong>Far more reliable.</strong> Across three language models the adaptive scheme recovers the hidden message where <strong>fixed-length baselines fail</strong> — and in fewer tokens.</p></div>
-      <div class="point"><span class="n">02</span><p><strong>Statistically invisible.</strong> A steganalysis detector<span class="info" tabindex="0" role="note" aria-label="TS-CSW, a convolutional steganalysis classifier, trained to separate our text from length-matched clean text. F1 near 0.5 is chance.">i<span class="tip">TS-CSW steganalysis classifier: F1 ≈ 0.50 vs length-matched clean text is chance level.</span></span> trained to separate hidden-message text from clean text performs <strong>at chance.</strong> Fluency and diversity match the unmodified model.</p></div>
+      <div class="point"><span class="n">01</span><p><strong>Far more reliable.</strong> Across three language models the adaptive scheme recovers the hidden message where <strong>fixed-budget baselines fail</strong> — and in fewer tokens.</p></div>
+      <div class="point"><span class="n">02</span><p><strong>Provably secure.</strong> The transcript is <strong>computationally indistinguishable from ordinary generation for any polynomial-time adversary</strong> — the guarantee and its proof are in the paper.</p></div>
       <div class="point"><span class="n">03</span><p><strong>Across natural dialogue.</strong> Hidden games play out over ordinary multi-turn conversations, payloads carried turn by turn.</p></div>
     </div>
-    <p class="body-col" style="margin-top:22px;">Full numbers, baselines, and comparisons are in the paper.</p>
+    <p class="body-col" style="margin-top:22px;">Full numbers, baselines, and ablations are in the paper.</p>
   </div>
 </section>
 
-<!-- ============ 6 · SECURITY / UNDETECTABILITY ============ -->
-<section class="section" id="security">
-  <div class="wrap reveal-on-scroll">
-    <p class="eyebrow">security</p>
-    <h2>Undetectable — and provably so</h2>
-    <div class="body-col">
-      <p>Each token is drawn while <span class="key">holding the visible distribution equal to the base model's</span>, so the conversation carries no statistical signature — which is why the trained detector above sits at chance. Beyond that empirical test, the transcript is <strong>computationally indistinguishable</strong> from ordinary generation to any efficient adversary.</p>
-      <p>The formal statement and its proof are in the paper.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ============ 7 · WHAT THIS MEANS ============ -->
+<!-- ============ 5 · WHAT THIS MEANS ============ -->
 <section class="section" id="means">
   <div class="wrap reveal-on-scroll">
     <p class="eyebrow">what this means</p>
@@ -464,7 +473,7 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
   </div>
 </section>
 
-<!-- ============ 8 · DEMO ============ -->
+<!-- ============ 7 · DEMO ============ -->
 <section class="section" id="demo">
   <div class="wrap reveal-on-scroll">
     <p class="eyebrow">try it live</p>
@@ -478,7 +487,7 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
   </div>
 </section>
 
-<!-- ============ 9 · AUTHORS ============ -->
+<!-- ============ 8 · AUTHORS ============ -->
 <section class="section" id="authors">
   <div class="wrap reveal-on-scroll">
     <p class="eyebrow">authors</p>
@@ -505,10 +514,32 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
         <img class="college-logo" src="./img/asulogo.png" alt="ASU" onerror="this.style.display='none'"/>
         <p>[One line on research focus.]</p>
       </div>
+      <div class="author">
+        <div class="avatar">A4</div>
+        <h3>[Author Four]</h3>
+        <div class="role">[affiliation]</div>
+        <img class="college-logo" src="./img/gtlogo.png" alt="[affiliation]" onerror="this.style.display='none'"/>
+        <p>[One line on research focus.]</p>
+      </div>
+      <div class="author">
+        <div class="avatar">A5</div>
+        <h3>[Author Five]</h3>
+        <div class="role">[affiliation]</div>
+        <img class="college-logo" src="./img/seaslogo.png" alt="[affiliation]" onerror="this.style.display='none'"/>
+        <p>[One line on research focus.]</p>
+      </div>
+      <div class="author">
+        <div class="avatar">A6</div>
+        <h3>[Author Six]</h3>
+        <div class="role">[affiliation]</div>
+        <img class="college-logo" src="./img/asulogo.png" alt="[affiliation]" onerror="this.style.display='none'"/>
+        <p>[One line on research focus.]</p>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- ============ 10 · CONTACT ============ -->
+<!-- ============ 9 · CONTACT ============ -->
 <section class="section tight" id="contact">
   <div class="wrap reveal-on-scroll">
     <p class="eyebrow">get in touch</p>
@@ -555,6 +586,34 @@ window.addEventListener('DOMContentLoaded', function () {
     renderMathInElement(document.body, { delimiters: [{ left: '\\(', right: '\\)', display: false }] });
   }
 });
+
+// Binary-decode animation for the Information Theory Lab logo(s)
+(function () {
+  function rand(n){ var s=''; for (var i=0;i<n;i++) s += Math.random() > 0.5 ? '1' : '0'; return s; }
+  function animate(el){
+    var text = el.dataset.text || el.textContent.trim();
+    el.dataset.text = text;
+    var total = 20, decode = 12, frame = 100, pause = 4000, step = 0;
+    var iv = setInterval(function () {
+      if (step < decode) {
+        el.textContent = rand(text.length);
+      } else {
+        var i = Math.floor(((step - decode) / (total - decode)) * text.length);
+        el.textContent = text.slice(0, i) + rand(text.length - i);
+      }
+      if (++step >= total) {
+        clearInterval(iv);
+        el.textContent = text;
+        setTimeout(function () { step = 0; animate(el); }, pause);
+      }
+    }, frame);
+  }
+  window.addEventListener('DOMContentLoaded', function () {
+    setTimeout(function () {
+      document.querySelectorAll('[data-it-logo] .anim').forEach(animate);
+    }, 700);
+  });
+})();
 </script>
 </body>
 </html>
