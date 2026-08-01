@@ -18,7 +18,7 @@
   --mono:"Space Mono",ui-monospace,monospace;
   --sans:"Inter",system-ui,sans-serif;
   --disp:"Space Grotesk",system-ui,sans-serif;
-  --bsz:390px;
+  --bsz:540px;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--ink);
@@ -37,9 +37,16 @@ header h1{font-family:var(--disp);font-size:17px;font-weight:700;
 header .sep{color:var(--blue);font-family:var(--mono)}
 header .sub{font-family:var(--mono);font-size:12px;color:var(--muted)}
 #hstatus{font-family:var(--mono);font-size:12px;color:var(--muted);
-         margin-left:auto;max-width:260px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+         margin-left:auto;max-width:220px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 #dot{width:8px;height:8px;border-radius:50%;background:var(--red);transition:background .3s}
 #dot.on{background:var(--green)}
+.hdr-btn{font-family:var(--mono);font-size:12px;padding:5px 12px;
+         border-radius:7px;cursor:pointer;border:1px solid var(--line);
+         background:var(--surf);color:var(--ink2);white-space:nowrap;text-decoration:none;
+         display:inline-flex;align-items:center;}
+.hdr-btn:hover{border-color:var(--blue);color:var(--blue);text-decoration:none}
+.hdr-btn.danger{border-color:var(--red);color:var(--red)}
+.hdr-btn.danger:hover{background:var(--red);color:#fff}
 
 main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
 
@@ -152,9 +159,11 @@ main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
 
   <header>
     <h1>BAM <span class="sep">/</span></h1>
-    <span class="sub">covert chess over LLM conversation</span>
+    <span class="sub">covert chess</span>
     <span id="hstatus">Connecting…</span>
     <div id="dot"></div>
+    <a class="hdr-btn" href="../">← Site</a>
+    <button class="hdr-btn danger" id="reset-btn">New game</button>
   </header>
   <main>
     <div id="chess">
@@ -230,8 +239,10 @@ let game=new Chess(), board=null, ws=null;
 let pendingSan=null, pendingUci=null, pendingFrom=null, pendingTo=null;
 let busy=false;
 let curExDiv=null, curABub=null, curBBub=null;
-let storedEngineMove=null, storedEngineSan=null, storedFen=null;
+let storedEngineMove=null, storedEngineSan=null;
 let curFromSq=null, curToSq=null, curMoveSan=null, curLegalCount=null;
+// decode result stored for use when Decode button is clicked
+let lastDecodeCorrect=false, lastDecoded=null, lastExpected=null;
 
 // ── board ────────────────────────────────────────────────────────────
 function mkBoard(fen){
@@ -335,10 +346,15 @@ function handleMsg(d){
       if(d.agent==='llm1'&&curABub){rmCur(curABub);curABub.textContent=d.text;scroll();}
       else if(d.agent==='llm2'&&curBBub){
         rmCur(curBBub);curBBub.textContent=d.text;
-        addDecodeBtn(curBBub);busy=false;updateSend();scroll();
+        addDecodeBtn(curBBub);
+        // do NOT set busy=false here — wait for board_update so board is
+        // in the correct state before the user can drag the next piece
+        scroll();
       }
       break;
     case 'decode_result':
+      // Store for use when Decode button is clicked
+      lastDecodeCorrect=d.correct; lastDecoded=d.decoded; lastExpected=d.expected;
       if(curABub){
         const bf=document.createElement('div');bf.className='bfoot';
         const eb=document.createElement('span');eb.className='emb-badge';
@@ -353,18 +369,31 @@ function handleMsg(d){
       status('Agent B decoding · Stockfish · generating watermarked reply…');break;
     case 'engine_move':
       storedEngineMove=d.move;storedEngineSan=d.san;
-      storedFen=null;  // will be set in board_update
       const tw=document.getElementById('__typing__');if(tw)tw.remove();
       const bw=mkBwrap('b','AGENT B');curExDiv.appendChild(bw);
       curBBub=bw.querySelector('.bubble');addCur(curBBub);scroll();break;
     case 'board_update':
-      // Store final FEN but do NOT update board yet — Decode click does that
-      storedFen=d.fen;break;
+      // Apply board immediately so next turn works (chess.js knows it's white's turn)
+      game.load(d.fen); board.position(d.fen, false);
+      clearHL();
+      if(curFromSq){hl(curFromSq,'sq-u1');hl(curToSq,'sq-u2');}
+      if(storedEngineMove){
+        const f=storedEngineMove.slice(0,2),t=storedEngineMove.slice(2,4);
+        setTimeout(()=>{hl(f,'sq-e1');hl(t,'sq-e2');},60);
+      }
+      updateMovelist(); updatePlayerRows();
+      storedEngineMove=storedEngineSan=null;
+      // Now unlock the next turn
+      busy=false; updateSend();
+      status('Your turn — drag a piece to continue');
+      break;
     case 'game_over':
       addSys(`Game over: ${d.result}`);busy=false;updateSend();break;
     case 'reset_ok':
       mkBoard();clearMsgs();addSys('New game. Drag a piece to begin.');
-      updatePlayerRows();updateMovelist();storedEngineMove=storedEngineSan=storedFen=null;
+      updatePlayerRows();updateMovelist();
+      storedEngineMove=storedEngineSan=null;
+      lastDecodeCorrect=false;lastDecoded=lastExpected=null;
       busy=false;updateSend();break;
     case 'error':
       addSys(`Error: ${d.msg}`);busy=false;updateSend();break;
@@ -381,23 +410,31 @@ function addDecodeBtn(bub){
   btn.addEventListener('click',()=>{
     if(btn.classList.contains('done'))return;
     btn.classList.add('done');btn.textContent='✓ Decoded';hint.textContent='';
+    // Show the hidden move
     const rb=document.createElement('span');rb.className='rev-badge';
-    rb.innerHTML=`♟ ${storedEngineSan} — hidden move recovered`;
+    rb.innerHTML=`♟ ${storedEngineSan||'?'} — hidden move`;
     bf.appendChild(rb);
-    if(storedFen){
-      game.load(storedFen);board.position(storedFen);
-      clearHL();
-      if(curFromSq){hl(curFromSq,'sq-u1');hl(curToSq,'sq-u2');}
-      if(storedEngineMove){
-        const f=storedEngineMove.slice(0,2),t=storedEngineMove.slice(2,4);
-        setTimeout(()=>{hl(f,'sq-e1');hl(t,'sq-e2');},60);
-      }
-      updateMovelist();updatePlayerRows();
+    // Show decode accuracy
+    const acc=document.createElement('div');
+    acc.style.cssText='font-family:var(--mono);font-size:11px;margin-top:5px;';
+    if(lastDecodeCorrect){
+      acc.style.color='var(--green)';
+      acc.textContent=`✓ Your move decoded correctly (${lastExpected})`;
+    } else {
+      acc.style.color='var(--red)';
+      acc.textContent=`✗ Decode error — AI received ${lastDecoded||'?'}, you played ${lastExpected}. Boards may be misaligned.`;
     }
-    storedEngineMove=storedEngineSan=storedFen=null;
-    scroll();status('Your turn — make another move');
+    bf.appendChild(acc);
+    scroll();
   });
 }
+
+// ── reset button ──────────────────────────────────────────────────────
+document.getElementById('reset-btn').addEventListener('click',()=>{
+  if(ws&&ws.readyState===WebSocket.OPEN){
+    ws.send(JSON.stringify({type:'reset'}));
+  }
+});
 
 // ── websocket connection ──────────────────────────────────────────────
 function connect(){
