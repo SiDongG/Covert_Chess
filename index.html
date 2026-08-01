@@ -98,13 +98,20 @@ strong { color: var(--ink); font-weight: 600; }
 .cover-sq.d { width: 16px; height: 16px; top: 72%; left: 37%; opacity: 0.25; transform: rotate(6deg); animation: drift 8s ease-in-out infinite reverse; }
 @keyframes drift { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-16px) rotate(10deg); } }
 
-.cover-inner { position: relative; z-index: 1; padding: 90px 0; }
-.cover-brand { font-family: var(--font-mono); font-size: 13px; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; margin-bottom: 26px; }
-.hook { font-family: var(--font-display); font-weight: 700; font-size: clamp(38px, 7vw, 78px); line-height: 1.05; letter-spacing: -0.03em; max-width: 15ch; }
+.cover-inner { position: relative; z-index: 1; padding: 60px 0 48px; }
+.cover-brand { font-family: var(--font-mono); font-size: 13px; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; margin-bottom: 20px; }
+.hook { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 4.2vw, 50px); line-height: 1.08; letter-spacing: -0.03em; max-width: 18ch; }
 .hook .hook-accent { color: var(--accent); }
-.hook-sub { font-size: clamp(17px, 2.1vw, 21px); color: var(--ink-2); max-width: 54ch; margin-top: 26px; }
+.hook-sub { font-size: clamp(16px, 1.8vw, 19px); color: var(--ink-2); max-width: 54ch; margin-top: 18px; }
 .hook-sub b { color: var(--ink); font-weight: 600; }
-.cover-cta { margin-top: 32px; }
+.cover-cta { margin-top: 24px; }
+
+/* cover authors strip */
+.cover-authors { display: flex; align-items: center; gap: 14px; margin-top: 26px; flex-wrap: wrap; }
+.cover-authors .org-logo { height: 26px; width: auto; object-fit: contain; opacity: .85; }
+.cover-authors .ca-names { font-family: var(--font-mono); font-size: 13px; color: var(--ink-2); }
+.cover-authors .ca-sep { color: var(--muted); }
+.cover-authors .ca-affil { font-family: var(--font-mono); font-size: 11.5px; color: var(--muted); }
 .scroll-cue { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); font-family: var(--font-mono); font-size: 12px; letter-spacing: .1em; color: var(--muted); text-transform: uppercase; }
 .scroll-cue:hover { color: var(--accent); text-decoration: none; }
 .scroll-cue span { display: block; text-align: center; font-size: 16px; margin-top: 4px; animation: bob 2s ease-in-out infinite; }
@@ -132,7 +139,7 @@ strong { color: var(--ink); font-weight: 600; }
 .lead h2 { max-width: 18ch; }
 
 /* stat strip */
-.stats { display: flex; margin-top: 30px; border: 1px solid var(--accent-brd); border-radius: var(--radius); overflow: hidden; max-width: 680px; background: linear-gradient(180deg, var(--accent-soft), transparent); }
+.stats { display: flex; margin-top: 30px; border: 1px solid var(--accent-brd); border-radius: var(--radius); max-width: 680px; background: linear-gradient(180deg, var(--accent-soft), transparent); overflow: visible; position: relative; }
 .stat { padding: 20px 24px; flex: 1; border-right: 1px solid var(--line); }
 .stat:last-child { border-right: none; }
 .stat .num { font-family: var(--font-display); font-size: 32px; font-weight: 700; color: var(--accent); line-height: 1; }
@@ -239,11 +246,13 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
   <div class="wrap">
     <div class="brand">hidden<span>/</span>conversations</div>
     <div class="nav-right">
-      <!-- swap these for org logos (<img>) when you have them -->
       <div class="orgs">
-        <span>[Organization One]</span>
+        <img src="./img/harvard-itl.png" alt="Harvard Information Theory Lab"
+             style="height:22px;width:auto;object-fit:contain;opacity:.85"
+             onerror="this.style.display='none'"/>
+        <span>Harvard ITL</span>
         <span class="sep">·</span>
-        <span>[Organization Two]</span>
+        <span>Georgia Tech</span>
       </div>
       <div class="links">
         <a class="primary" href="./demo/">Demo</a>
@@ -264,63 +273,55 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
     <p class="cover-brand">covert communication · llm agents</p>
     <h1 class="hook">Covert communication in LLM-agent conversations.<br><span class="hook-accent">Model and prompt agnostic.</span></h1>
     <div class="btn-row cover-cta">
-      <a class="btn primary" href="./demo/">Play chess with AI by chatting</a>
-      <a class="btn" href="#lead">See how it works</a>
+      <a class="btn primary" href="./demo/">Play chess with AI by embedding moves in chat</a>
+      <a class="btn" href="#gap">See how it works</a>
+    </div>
+
+    <!-- authors on front page -->
+    <div class="cover-authors">
+      <img class="org-logo" src="./img/harvard-itl.png"
+           alt="Harvard University — Information Theory Lab"
+           onerror="this.style.display='none'"/>
+      <span class="ca-sep">·</span>
+      <span class="ca-names">
+        <a href="https://sidongg.github.io/" style="color:var(--ink-2)">Sidong Guo</a>
+        <span class="ca-sep"> · </span>[Author Two]<span class="ca-sep"> · </span>[Author Three]
+      </span>
+    </div>
+    <div class="cover-authors" style="margin-top:6px">
+      <span class="ca-affil">Harvard University, Information Theory Lab · Georgia Institute of Technology</span>
     </div>
   </div>
-  <a class="scroll-cue" href="#lead">scroll<span>↓</span></a>
+  <a class="scroll-cue" href="#gap">scroll<span>↓</span></a>
 </header>
 
-<!-- ============ 1 · LEAD (result + reveal) ============ -->
-<section class="section lead" id="lead">
+<!-- ============ 1 · THE GAP ============ -->
+<section class="section" id="gap">
   <div class="wrap reveal-on-scroll">
-    <p class="eyebrow">the headline</p>
-    <h2>Reliable enough to be a real communication channel.</h2>
+    <p class="eyebrow">the gap</p>
+    <h2>Reliably hiding a message in inference-time LLM text without prompt or model sharing is new.</h2>
 
-    <div class="stats">
+    <!-- stat strip moved here from the old headline section -->
+    <div class="stats" style="margin-top:24px; margin-bottom:30px;">
       <div class="stat">
         <div class="num">≈0.2</div>
         <div class="lab">bits / token
-          <span class="info" tabindex="0" role="note" aria-label="An 8-bit payload embedded in roughly 40 to 48 tokens, measured on the C4 News dataset.">i<span class="tip">8-bit payload embedded in ~40–48 tokens, measured on the C4 News dataset.</span></span>
+          <span class="info" tabindex="0" role="note" aria-label="8-bit payload embedded in ~40–48 tokens, measured on the C4 News dataset.">i<span class="tip">8-bit payload embedded in ~40–48 tokens, measured on the C4 News dataset.</span></span>
         </div>
       </div>
       <div class="stat">
         <div class="num">&lt;0.3%</div>
         <div class="lab">message error
-          <span class="info" tabindex="0" role="note" aria-label="Message-error rate, not bit-error: a single wrong bit fails the whole message. Averaged over 1000 trials per model.">i<span class="tip">Message-error rate (one wrong bit fails the whole message), over 1000 trials per model.</span></span>
+          <span class="info" tabindex="0" role="note" aria-label="Message-error rate (one wrong bit fails the whole message), over 1000 trials per model.">i<span class="tip">Message-error rate (one wrong bit fails the message), over 1000 trials per model.</span></span>
         </div>
       </div>
       <div class="stat">
         <div class="num">3</div>
         <div class="lab">open models
-          <span class="info" tabindex="0" role="note" aria-label="Llama 3.1 8B, Qwen 3.5 9B, and Mistral 7B v0.3, at temperature 1.0 with top-50 sampling.">i<span class="tip">Llama-3.1-8B, Qwen-3.5-9B, Mistral-7B-v0.3 · temperature 1.0, top-50 sampling.</span></span>
+          <span class="info" tabindex="0" role="note" aria-label="Llama-3.1-8B, Qwen-3.5-9B, Mistral-7B-v0.3 · temperature 1.0, top-50 sampling.">i<span class="tip">Llama-3.1-8B, Qwen-3.5-9B, Mistral-7B-v0.3 · temperature 1.0, top-50 sampling.</span></span>
         </div>
       </div>
     </div>
-    <p class="stat-note"><strong>Near error-free embedding at ≈0.2 bits per token</strong>, on every open-source model we tested.</p>
-
-    <div class="reveal-card" id="revealCard">
-      <div class="who">agent a · casual chat</div>
-      <p class="cover-text">
-        yeah <span class="tok">honestly</span> my weekend was <span class="tok">pretty</span> chill,
-        mostly <span class="tok">just</span> stayed in and <span class="tok">watched</span> some stuff
-      </p>
-      <div class="payload-out">
-        <span class="hidden-label">hidden move:</span>
-        <span class="val">♟ &nbsp;e2 → e4</span>
-      </div>
-      <button class="toggle-btn" id="revealBtn" aria-pressed="false">reveal hidden message</button>
-    </div>
-    <p class="card-cap"><b>Same words, two meanings.</b> Toggle to reveal the move hidden in this turn — recovered by the other agent from the text alone.</p>
-  </div>
-</section>
-
-<!-- ============ 2 · THE GAP ============ -->
-<section class="section" id="gap">
-  <div class="wrap reveal-on-scroll">
-    <p class="eyebrow">the gap</p>
-    <h2>Hiding a message in AI text isn't new. Doing it with no shared model or prompt is.</h2>
-    <p class="lede">Prior methods work — but only if the two agents share a <span class="key">model</span>, a <span class="key">prompt</span>, and a stream of randomness as long as the message. Take those crutches away — so the receiver sees only the generated text, with nothing about the sender's model (the <span class="key">black-box</span> setting) — and almost nothing survives on real conversation. That's the gap we close.</p>
 
     <div class="compare">
       <div class="card">
@@ -339,7 +340,7 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
         <ul>
           <li><b>Prompt- and model-agnostic</b> — the decoder only reads text</li>
           <li>Side info from a <b>shared seed</b>, not a length-scaled key stream
-            <span class="info" tabindex="0" role="note" aria-label="A single 128-bit seed plus a fresh public nonce per session, expanded on demand with HMAC-SHA-256.">i<span class="tip">One 128-bit seed + a fresh per-session nonce, expanded on demand via HMAC-SHA-256.</span></span>
+            <span class="info" tabindex="0" role="note" aria-label="One 128-bit seed + a fresh per-session nonce, expanded on demand via HMAC-SHA-256.">i<span class="tip">One 128-bit seed + a fresh per-session nonce, expanded on demand via HMAC-SHA-256.</span></span>
           </li>
           <li><b>Variable-length</b> — adapts to however the turn unfolds</li>
           <li><b>Reliable</b> even when each word carries almost no entropy</li>
@@ -480,11 +481,9 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
     <p class="eyebrow">authors</p>
     <h2>Who made this</h2>
     <div class="author-grid">
-      <div class="author"><div class="avatar">A1</div><h3>[Author One]</h3><div class="role">[affiliation]</div><p>[One line on research focus. Link the name to a homepage.]</p></div>
+      <div class="author"><div class="avatar">SG</div><h3><a href="https://sidongg.github.io/" style="color:var(--ink)">Sidong Guo</a></h3><div class="role">Georgia Institute of Technology</div><p>Information theory, covert communication, machine learning security.</p></div>
       <div class="author"><div class="avatar">A2</div><h3>[Author Two]</h3><div class="role">[affiliation]</div><p>[One line on research focus.]</p></div>
       <div class="author"><div class="avatar">A3</div><h3>[Author Three]</h3><div class="role">[affiliation]</div><p>[One line on research focus.]</p></div>
-    </div>
-    <p class="blind-note">Note: if the paper is still under double-blind review, keep this section as placeholders (or hidden) until acceptance — it's the part that de-anonymizes the submission.</p>
   </div>
 </section>
 
@@ -517,17 +516,6 @@ document.getElementById('yr').textContent = new Date().getFullYear();
   var nav = document.getElementById('nav');
   function onScroll(){ nav.classList.toggle('scrolled', window.scrollY > 40); }
   onScroll(); window.addEventListener('scroll', onScroll, { passive: true });
-})();
-
-// reveal toggle
-(function () {
-  var card = document.getElementById('revealCard');
-  var btn = document.getElementById('revealBtn');
-  btn.addEventListener('click', function () {
-    var on = card.classList.toggle('revealed');
-    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
-    btn.textContent = on ? 'hide hidden message' : 'reveal hidden message';
-  });
 })();
 
 // scroll reveal
