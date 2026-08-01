@@ -1,0 +1,21 @@
+# ArcMark OT solver defaults.
+# Override by passing a modified ArcMarkConfig or loading a custom YAML.
+
+# Vocabulary restriction
+top_k: 50
+top_p: null          # null = disabled
+
+# Sinkhorn solver
+# PERFORMANCE: Relaxed defaults (was max_iter=1000, stop_thr=1e-6).
+# Tests accept 1e-4 tolerance, so 1e-5 is safe with good performance.
+# For faster inference, use ArcMarkConfig.fast() (max_iter=200, stop_thr=1e-4).
+# For maximum accuracy, use ArcMarkConfig.precise() (max_iter=2000, stop_thr=1e-8).
+sinkhorn_reg: 0.05
+max_iter: 500         # Balanced default (was 1000)
+stop_thr: 1.0e-5      # Balanced default (was 1e-6)
+min_tokens: 2
+method: sinkhorn_log  # "sinkhorn", "sinkhorn_log", "sinkhorn_stabilized"
+
+# Key generation
+context_width: 3
+hash_keys: true
