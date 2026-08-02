@@ -230,7 +230,7 @@ main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
     <div id="connect-sub">Paste your RunPod URL below, or open this page directly from the RunPod dashboard.</div>
     <div id="connect-row">
       <input id="backend-input" type="text"
-             placeholder="wss://abc123-8000.proxy.runpod.net"
+             placeholder="https://7cwkj0tq9l2283-8000.proxy.runpod.net"
              autocomplete="off" spellcheck="false"/>
       <button id="connect-btn">Connect</button>
     </div>
@@ -346,15 +346,16 @@ Open-source models can occasionally make mistakes or produce repetitive text.</s
 
 <script>
 // ── backend URL resolution ──────────────────────────────────────────
+// Set this to your pod URL so the demo auto-connects on load.
+// Update this line whenever you get a new pod.
+const BACKEND_URL = 'https://7cwkj0tq9l2283-8000.proxy.runpod.net';
+
 function getWsUrl(manualUrl) {
   const sid = 'bam-' + Math.random().toString(36).slice(2,9);
   const p   = new URLSearchParams(location.search);
 
-  // Priority 1: manually entered URL from the connect panel
-  if (manualUrl) {
-    const base = manualUrl.trim().replace(/\/+$/, '');
-    return `${base}/ws/${sid}`;
-  }
+  // Priority 1: manually entered in connect panel
+  if (manualUrl) return `${manualUrl.trim().replace(/\/+$/, '')}/ws/${sid}`;
   // Priority 2: ?backend= query param
   const ext = p.get('backend');
   if (ext) return `${ext}/ws/${sid}`;
@@ -365,7 +366,9 @@ function getWsUrl(manualUrl) {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
     return `${proto}://${location.host}/ws/${sid}`;
   }
-  return null;  // no backend — show connect panel
+  // Priority 4: hardcoded default
+  if (BACKEND_URL) return `${BACKEND_URL}/ws/${sid}`;
+  return null;
 }
 
 // ── state ────────────────────────────────────────────────────────────
@@ -593,6 +596,10 @@ const DEFAULT_PROMPT_B = (
 function initSettings() {
   document.getElementById('prompt-a-input').value = DEFAULT_PROMPT_A;
   document.getElementById('prompt-b-input').value = DEFAULT_PROMPT_B;
+  // Pre-fill connect panel with the default backend URL
+  if (BACKEND_URL) {
+    document.getElementById('backend-input').value = BACKEND_URL;
+  }
 }
 
 document.getElementById('settings-btn').addEventListener('click', () => {
