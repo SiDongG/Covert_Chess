@@ -185,7 +185,7 @@ strong { color: var(--ink); font-weight: 600; }
 .slot { border: 1.5px dashed var(--line-2); border-radius: var(--radius); background: repeating-linear-gradient(45deg, transparent, transparent 12px, var(--accent-soft) 12px, var(--accent-soft) 24px); padding: 40px 28px; text-align: center; color: var(--muted); font-family: var(--font-mono); font-size: 13px; letter-spacing: .04em; }
 .slot strong { display: block; color: var(--ink-2); font-family: var(--font-display); font-size: 16px; letter-spacing: 0; margin-bottom: 6px; font-weight: 600; }
 .explainer-embed { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
-.explainer-embed iframe { display: block; width: 100%; height: 1040px; border: 0; }
+.explainer-embed iframe { display: block; width: 100%; height: 560px; border: 0; }
 
 /* challenge / fix */
 .cf { position: relative; border-left: 2px solid var(--line-2); padding: 4px 0 4px 26px; margin: 44px 0; max-width: 820px; }
@@ -387,7 +387,471 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
       <p>Both agents see each token the instant it appears, so the sender always knows exactly what the receiver knows. That makes the conversation a channel with <span class="key">perfect feedback</span> — the lever BAM pulls for reliability. The walkthrough below shows the whole scheme end to end; the full formalism is in the paper.</p>
     </div>
     <div class="explainer-embed" style="margin-top:28px;">
-      <iframe id="bamFrame" src="./bam-explainer.html?embed=1" title="How BAM works — animated walkthrough" loading="lazy" scrolling="no"></iframe>
+      <iframe id="bamFrame" title="How BAM works — animated walkthrough" scrolling="no" srcdoc="<!DOCTYPE html>
+<html lang=&quot;en&quot;>
+<head>
+<meta charset=&quot;UTF-8&quot; />
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot; />
+<title>How BAM works — animated walkthrough</title>
+<link rel=&quot;preconnect&quot; href=&quot;https://fonts.googleapis.com&quot; />
+<link rel=&quot;preconnect&quot; href=&quot;https://fonts.gstatic.com&quot; crossorigin />
+<link href=&quot;https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&amp;family=Inter:wght@400;500;600;700&amp;family=Space+Mono:wght@400;700&amp;display=swap&quot; rel=&quot;stylesheet&quot; />
+<style>
+:root{
+  --bg:#EEE7D6; --surface:#F7F2E7; --surface-2:#F2ECDD; --ink:#17284D; --ink-2:#47516B;
+  --muted:#8A836C; --line:#DED4BE; --line-2:#CFC3A6; --accent:#2A4BD0; --accent-2:#4E6BE0;
+  --accent-soft:rgba(42,75,208,0.10); --accent-brd:rgba(42,75,208,0.32);
+  --confirm:#2E7D57; --alert:#B4472F; --amber:#A9791F;
+  --font-display:&quot;Space Grotesk&quot;,system-ui,sans-serif; --font-body:&quot;Inter&quot;,system-ui,sans-serif; --font-mono:&quot;Space Mono&quot;,ui-monospace,monospace;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font-body);padding:32px 18px;}
+.wrap{max-width:940px;margin:0 auto;}
+.eyebrow{font-family:var(--font-mono);font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:var(--accent);margin:0 0 10px;}
+h1{font-family:var(--font-display);font-weight:600;letter-spacing:-.02em;font-size:clamp(24px,3.4vw,32px);margin:0 0 8px;}
+.sub{color:var(--ink-2);font-size:16px;max-width:64ch;margin:0 0 6px;}
+.disclaimer{font-family:var(--font-mono);font-size:11px;color:var(--muted);margin:8px 0 22px;letter-spacing:.02em;}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.tab{font-family:var(--font-mono);font-size:12.5px;letter-spacing:.03em;padding:8px 14px;border:1px solid var(--line-2);border-radius:9px;background:var(--surface);color:var(--ink-2);cursor:pointer;transition:all .15s ease;display:flex;align-items:center;gap:8px;}
+.tab .dot{width:8px;height:8px;border-radius:50%;background:var(--line-2);transition:background .15s ease;}
+.tab:hover{border-color:var(--accent);color:var(--accent);}
+.tab.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:700;}
+.tab.active .dot{background:var(--accent);}
+.stage-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 6px 22px rgba(23,40,77,.05);}
+canvas{display:block;width:100%;height:auto;}
+.caption{min-height:64px;padding:16px 22px;border-top:1px solid var(--line);background:var(--surface-2);}
+.caption .beat-k{font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:5px;}
+.caption .beat-t{font-size:15.5px;color:var(--ink);line-height:1.5;}
+.caption .beat-t b{font-weight:600;}
+.caption .beat-t code{font-family:var(--font-mono);font-size:13.5px;color:var(--accent);background:var(--accent-soft);padding:1px 5px;border-radius:4px;}
+.controls{display:flex;align-items:center;gap:10px;margin-top:14px;}
+.ctrl{width:42px;height:42px;border-radius:10px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .12s ease;}
+.ctrl:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-1px);}
+.ctrl.play{width:52px;height:52px;background:var(--accent);color:#F4EFE2;border-color:var(--accent);}
+.ctrl.play:hover{background:var(--accent-2);color:#F4EFE2;}
+.ctrl svg{width:18px;height:18px;fill:currentColor;}
+.ctrl.play svg{width:22px;height:22px;}
+.track{flex:1;height:6px;border-radius:6px;background:var(--line);position:relative;cursor:pointer;margin:0 6px;}
+.track .fill{position:absolute;top:0;left:0;height:100%;border-radius:6px;background:var(--accent);width:0%;}
+.track .ticks{position:absolute;inset:0;}
+.track .tick{position:absolute;top:-4px;width:2px;height:14px;background:var(--line-2);border-radius:2px;transform:translateX(-1px);}
+.foot{margin-top:16px;font-size:13px;color:var(--muted);line-height:1.6;}
+.foot b{color:var(--ink-2);font-weight:600;}
+/* embed mode: hide the standalone page title so it reads as a section figure */
+body.embed{padding:8px 0 14px;}
+body.embed .eyebrow, body.embed h1, body.embed .sub{display:none;}
+</style>
+</head>
+<body class=&quot;embed&quot;>
+<div class=&quot;wrap&quot;>
+  <p class=&quot;eyebrow&quot;>how it works</p>
+  <h1>Hiding a message in a conversation, one token at a time</h1>
+  <p class=&quot;sub&quot;>BAM turns token generation into a communication channel with perfect feedback. Three stages do the work — synthesize a distortion-free channel, steer a shared belief, then confirm before committing.</p>
+  <p class=&quot;disclaimer&quot;>Schematic walkthrough — dynamics are illustrative for exposition, not a logged run.</p>
+
+  <div class=&quot;tabs&quot; id=&quot;tabs&quot;></div>
+
+  <div class=&quot;stage-card&quot;>
+    <canvas id=&quot;stage&quot;></canvas>
+    <div class=&quot;caption&quot;>
+      <div class=&quot;beat-k&quot; id=&quot;capK&quot;>Stage 1 · Channel synthesis</div>
+      <div class=&quot;beat-t&quot; id=&quot;capT&quot;>…</div>
+    </div>
+  </div>
+
+  <div class=&quot;controls&quot;>
+    <button class=&quot;ctrl&quot; id=&quot;btnReplay&quot; title=&quot;Restart&quot;><svg viewBox=&quot;0 0 24 24&quot;><path d=&quot;M12 5V1L7 6l5 5V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z&quot;/></svg></button>
+    <button class=&quot;ctrl&quot; id=&quot;btnPrev&quot; title=&quot;Previous stage&quot;><svg viewBox=&quot;0 0 24 24&quot;><path d=&quot;M6 5h2v14H6zM20 5v14L9 12z&quot;/></svg></button>
+    <button class=&quot;ctrl play&quot; id=&quot;btnPlay&quot; title=&quot;Play / pause&quot;><svg id=&quot;playIcon&quot; viewBox=&quot;0 0 24 24&quot;><path d=&quot;M8 5v14l11-7z&quot;/></svg></button>
+    <div class=&quot;track&quot; id=&quot;track&quot;><div class=&quot;ticks&quot; id=&quot;ticks&quot;></div><div class=&quot;fill&quot; id=&quot;fill&quot;></div></div>
+    <button class=&quot;ctrl&quot; id=&quot;btnNext&quot; title=&quot;Next stage&quot;><svg viewBox=&quot;0 0 24 24&quot;><path d=&quot;M16 5h2v14h-2zM4 5l11 7-11 7z&quot;/></svg></button>
+  </div>
+
+  <p class=&quot;foot&quot;><b>Stage 1</b> follows ArcMark's optimal-transport construction (symbols, tokens, and side-info on the unit circle; couple symbol→token while preserving the base distribution). <b>Stage 2</b> is the posterior-matching belief update from the paper. <b>Stage 3</b> is the Yamamoto–Itoh decode-and-confirm phase that drives the reliability exponent. Full statements and proofs are in the paper.</p>
+</div>
+
+<script>
+const C = {
+  ink:'#17284D', ink2:'#47516B', muted:'#8A836C', line:'#DED4BE', line2:'#CFC3A6',
+  accent:'#2A4BD0', accent2:'#4E6BE0', accentSoft:'rgba(42,75,208,0.12)',
+  confirm:'#2E7D57', alert:'#B4472F', amber:'#A9791F', surf:'#F7F2E7', surf2:'#F2ECDD'
+};
+const cv = document.getElementById('stage');
+const ctx = cv.getContext('2d');
+let W=0, H=0, DPR=1;
+function resize(){
+  const cssW = cv.parentElement.clientWidth;
+  const cssH = Math.max(380, Math.min(520, Math.round(cssW*0.56)));
+  DPR = Math.min(2, window.devicePixelRatio||1);
+  cv.width = cssW*DPR; cv.height = cssH*DPR; cv.style.height = cssH+'px';
+  W = cssW; H = cssH; ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+window.addEventListener('resize', ()=>{ resize(); draw(); });
+
+/* ---------- illustrative model state ---------- */
+const WORDS = ['the','model','a','signal','of','data','is','we','to','that','and','in'];
+const N = WORDS.length;
+const BASEP = normalize([0.19,0.12,0.03,0.10,0.05,0.09,0.04,0.08,0.03,0.06,0.09,0.07]);
+const SEEDROT = 0.32;
+const TARGET_IDX = 1;
+const K = 3;
+const NMSG = 12;
+const GAMMA = 0.72;
+const RHO_ACK = 0.82;
+const RHO_NACK = 0.82;
+const MHAT = '01001101';
+function normalize(a){ const s=a.reduce((x,y)=>x+y,0); return a.map(v=>v/s); }
+function angleOf(i){ return -Math.PI/2 + SEEDROT + i/N*2*Math.PI; }
+
+// Realistic posterior matching: each step the decoder observes a token angle near the
+// true message's expected angle (with fixed, reproducible jitter) and does a Bayesian
+// update with a von Mises likelihood over candidate-message angles.
+const KAPPA = 1.9;                                  // channel concentration
+const OBSNOISE = [0.92,-0.61,0.44,-0.24,0.14,-0.08,0.05,-0.03];
+const OBS = OBSNOISE.map(nz => angleOf(K) + nz);    // observed token angle per step
+const FRAMES = (function(){
+  let cur=new Array(NMSG).fill(1/NMSG); const frames=[cur.slice()];
+  for(let t=0;t<OBS.length;t++){
+    const lik=cur.map((_,m)=>Math.exp(KAPPA*Math.cos(OBS[t]-angleOf(m))));
+    cur=normalize(cur.map((p,m)=>p*lik[m])); frames.push(cur.slice());
+  }
+  return frames;
+})();
+function posteriorAt(t){ const f=t*(FRAMES.length-1); const i=Math.min(FRAMES.length-2,Math.floor(f)); const u=f-i,a=FRAMES[i],b=FRAMES[i+1]; return a.map((v,idx)=>v+(b[idx]-v)*easeInOut(u)); }
+function confAt(t){ const ack=0.5+0.46*easeInOut(clamp01(t)); return [1-ack, ack]; }
+
+/* ---------- timeline ---------- */
+const BEATS = [
+  {scene:0, dur:3000, k:'Stage 1 · Channel synthesis', t:'The base model proposes a <b>next-token distribution</b>. Each candidate token sits at a fixed angle on the unit circle; stem length shows the model\u2019s probability.'},
+  {scene:0, dur:3200, k:'Stage 1 · Channel synthesis', t:'The coded symbol for this step defines a <b>target angle</b> <code>\u03b8*</code> on the circle. We want to bias sampling toward it — without touching the model\u2019s statistics.'},
+  {scene:0, dur:3600, k:'Stage 1 · Channel synthesis', t:'An <b>optimal-transport coupling</b> maps symbol \u2192 token, minimizing arc length to <code>\u03b8*</code> while the key-averaged marginal stays exactly the base distribution. Distortion-free.'},
+  {scene:0, dur:3400, k:'Stage 1 · Channel synthesis', t:'Sample one token: its angle is the <b>transmitted symbol</b>. Because both agents see the token, the decoder reads that angle back from text + seed — no model in the loop.'},
+
+  {scene:1, dur:3000, k:'Stage 2 · Posterior matching', t:'The decoder holds a <b>belief</b> over all candidate messages — uniform to start. Every observed token is a fresh channel output.'},
+  {scene:1, dur:3800, k:'Stage 2 · Posterior matching', t:'Each token reweights the belief: <code>\u03c0\u209c(m) \u221d \u03c0\u209c\u208b\u2081(m)\u00b7\u2113\u209c(m)</code>. The true message climbs; an early decoy competes, then fades as evidence accumulates.'},
+  {scene:1, dur:3400, k:'Stage 2 · Posterior matching', t:'The <b>feedback</b> closes the loop: the encoder picks the next symbol from the current belief (posterior matching), so the distribution concentrates as fast as the channel allows.'},
+  {scene:1, dur:3400, k:'Stage 2 · Posterior matching', t:'It spends tokens only while uncertain — a <b>variable stopping time</b> — until one candidate crosses the threshold <code>\u03b3</code>. That\u2019s the sequentiality gain.'},
+
+  {scene:2, dur:3000, k:'Stage 3 · Yamamoto\u2013Itoh scheme', t:'One candidate now dominates the message belief. But a confident posterior can still be <b>wrong</b> — committing here is where naive schemes lose reliability.'},
+  {scene:2, dur:3900, k:'Stage 3 · Yamamoto\u2013Itoh scheme', t:'So BAM runs the <b>Yamamoto\u2013Itoh scheme</b>: a second, tiny belief over just <b>{ACK, NACK}</b>, updated by repeated verdict symbols over the same feedback channel.'},
+  {scene:2, dur:3500, k:'Stage 3 · Yamamoto\u2013Itoh scheme', t:'When the ACK belief crosses <code>\u03c1_ack</code> (or NACK crosses <code>\u03c1_nack</code>), BAM decides — <b>commit</b> on ACK, discard &amp; resume on NACK. This adaptivity drives the optimal reliability exponent.'},
+  {scene:2, dur:3600, k:'The whole pipeline', t:'Synthesize a distortion-free channel \u2192 steer a shared belief \u2192 confirm. <b>Reliable, distortion-free, and model- &amp; prompt-agnostic.</b>'}
+];
+const SCENES=[0,1,2];
+const SCENE_NAMES=['Channel synthesis','Posterior matching','Confirmation'];
+BEATS.forEach((b,i)=>b.i=i);
+function sceneBeats(s){ return BEATS.filter(b=>b.scene===s); }
+function sceneDur(s){ return sceneBeats(s).reduce((a,b)=>a+b.dur,0); }
+const TOTAL = BEATS.reduce((a,b)=>a+b.dur,0);
+function beatStart(i){ let t=0; for(let j=0;j<i;j++) t+=BEATS[j].dur; return t; }
+
+/* ---------- clock ---------- */
+let elapsed=0, playing=false, last=0;
+function loop(ts){ if(!last) last=ts; const dt=ts-last; last=ts;
+  if(playing){ elapsed+=dt; if(elapsed>=TOTAL){ elapsed=TOTAL; playing=false; setPlayIcon(); } }
+  draw(); requestAnimationFrame(loop); }
+function curBeatIndex(){ let t=elapsed; for(let i=0;i<BEATS.length;i++){ if(t<BEATS[i].dur||i===BEATS.length-1) return i; t-=BEATS[i].dur; } return BEATS.length-1; }
+
+/* ---------- easing ---------- */
+function easeInOut(t){ return t<.5? 2*t*t : 1-Math.pow(-2*t+2,2)/2; }
+function easeOut(t){ return 1-Math.pow(1-t,3); }
+function clamp01(x){ return Math.max(0,Math.min(1,x)); }
+function lerp(a,b,t){ return a+(b-a)*t; }
+
+/* ---------- draw root ---------- */
+function draw(){
+  ctx.clearRect(0,0,W,H); ctx.fillStyle=C.surf; ctx.fillRect(0,0,W,H);
+  const bi=curBeatIndex(), b=BEATS[bi];
+  const beatLocalP=clamp01((elapsed-beatStart(bi))/b.dur);
+  const sb=sceneBeats(b.scene), first=sb[0].i;
+  const sceneP=clamp01((elapsed-beatStart(first))/sceneDur(b.scene));
+  const beatInScene=bi-first;
+  if(b.scene===0) drawSynthesis(sceneP,beatInScene,beatLocalP);
+  else if(b.scene===1) drawPosterior(sceneP,beatInScene,beatLocalP);
+  else drawConfirm(sceneP,beatInScene,beatLocalP);
+  document.getElementById('capK').textContent=b.k;
+  document.getElementById('capT').innerHTML=b.t;
+  document.getElementById('fill').style.width=(elapsed/TOTAL*100)+'%';
+  syncTabs(b.scene);
+}
+
+/* =========================================================
+   STAGE 1 — CHANNEL SYNTHESIS
+   ========================================================= */
+function arcScene(cx,cy,R,p,showLabels){
+  ring(cx,cy,R,C.line2,1.5);
+  ctx.globalAlpha=clamp01((p-0.04)/0.14);
+  for(let i=0;i<N;i++) tick(cx,cy,R,angleOf(i),6,C.line2);
+  ctx.globalAlpha=1;
+  const appear=clamp01(p/0.16), maxStem=R*0.42, pmax=Math.max(...BASEP);
+  for(let i=0;i<N;i++){
+    const a=angleOf(i), ox=cx+Math.cos(a)*R, oy=cy+Math.sin(a)*R;
+    const grow=easeOut(clamp01(appear-i*0.02)), len=maxStem*(BASEP[i]/pmax)*grow;
+    const sx=cx+Math.cos(a)*(R+3), sy=cy+Math.sin(a)*(R+3);
+    const ex=cx+Math.cos(a)*(R+3+len), ey=cy+Math.sin(a)*(R+3+len);
+    const isT=i===TARGET_IDX;
+    stroke(sx,sy,ex,ey, isT?C.accent:C.line2, isT?3:2);
+    dot(ox,oy,4*grow, isT?C.accent:C.ink2);
+    if(showLabels){ ctx.globalAlpha=grow*0.9; label(WORDS[i], ex+Math.cos(a)*7, ey+Math.sin(a)*7, a, isT?C.accent:C.muted, 10.5); ctx.globalAlpha=1; }
+  }
+  if(p>0.26){
+    const tp=clamp01((p-0.26)/0.12), a=angleOf(TARGET_IDX);
+    const tx=cx+Math.cos(a)*R, ty=cy+Math.sin(a)*R;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,R,a-0.14,a+0.14); ctx.closePath();
+    ctx.fillStyle='rgba(42,75,208,'+(0.13*tp)+')'; ctx.fill();
+    ring(tx,ty,10*easeOut(tp),C.accent,2);
+  }
+  if(p>0.4 &amp;&amp; p<0.92){
+    const fp=clamp01((p-0.4)/0.4), a=angleOf(TARGET_IDX);
+    const tx=cx+Math.cos(a)*R, ty=cy+Math.sin(a)*R, t=performance.now()/1000;
+    for(let i=0;i<N;i++){ if(i===TARGET_IDX) continue;
+      const ai=angleOf(i), ox=cx+Math.cos(ai)*R, oy=cy+Math.sin(ai)*R, nP=Math.max(1,Math.round(BASEP[i]*12));
+      for(let k=0;k<nP;k++){ let ph=((t*0.5)+(k/nP)+i*0.13)%1; const e=easeInOut(ph);
+        const mx=(ox+tx)/2+(cx-(ox+tx)/2)*0.55, my=(oy+ty)/2+(cy-(oy+ty)/2)*0.55;
+        const x=(1-e)*(1-e)*ox+2*(1-e)*e*mx+e*e*tx, y=(1-e)*(1-e)*oy+2*(1-e)*e*my+e*e*ty;
+        ctx.globalAlpha=(0.5*Math.sin(ph*Math.PI))*fp; dot(x,y,2,C.accent); } }
+    ctx.globalAlpha=1;
+  }
+  if(p>0.86){
+    const a=angleOf(TARGET_IDX), tx=cx+Math.cos(a)*R, ty=cy+Math.sin(a)*R;
+    const pulse=1+0.5*Math.sin(performance.now()/140);
+    ring(tx,ty,13+5*pulse*clamp01((p-0.86)/0.14),C.accent,2.4); dot(tx,ty,7,C.accent);
+  }
+}
+function drawSynthesis(p, beat, bl){
+  const NARROW=W<640;
+  const items=[
+    ['Next-token distribution','p\u209c(token) proposed by the base LM'],
+    ['Target symbol \u2192 angle \u03b8*','the coded symbol picks a point on the circle'],
+    ['Optimal-transport coupling','couple symbol\u2192token; keep marginal = base (distortion-free)'],
+    ['Sample &amp; decode','token angle = transmitted symbol; decoder reads \u03b8 from text + seed']
+  ];
+  if(!NARROW){
+    stageHeader('OPTIMAL TRANSPORT');
+    const cx=W*0.26, cy=H*0.55, R=Math.min(W*0.165,H*0.285);
+    arcScene(cx,cy,R,p,true);
+    drawRail(beat, items, W*0.55, H*0.10, W*0.41, H*0.80);
+  } else {
+    stageHeader('OPTIMAL TRANSPORT');
+    const cx=W*0.5, cy=H*0.37, R=Math.min(W*0.28,H*0.22);
+    arcScene(cx,cy,R,p,W>=460);
+    railChip(W*0.05, H*0.76, W*0.90, H*0.19, items[beat][0], items[beat][1], true);
+  }
+}
+function drawRail(active, items, rx, y0, rw, totalH){
+  const gap=totalH/items.length;
+  for(let i=0;i<items.length;i++){ if(i>active) continue;
+    railChip(rx, y0+i*gap, rw, gap*0.86, items[i][0], items[i][1], i===active); }
+}
+function railChip(x,y,w,h,title,sub,now){
+  ctx.globalAlpha=1;
+  ctx.fillStyle= now? 'rgba(42,75,208,0.10)' : C.surf2; roundRect(x,y,w,h,10); ctx.fill();
+  ctx.fillStyle= now? C.accent : C.line2; roundRect(x,y,4,h,2); ctx.fill();
+  const padX=16, innerW=w-padX-14, tx=x+padX;
+  ctx.textAlign='left'; ctx.textBaseline='top';
+  const titleLH=17;
+  ctx.fillStyle= now? C.accent : C.ink2; ctx.font=&quot;600 13.5px 'Space Grotesk',sans-serif&quot;;
+  const lastTitleTop=wrapText(title, tx, y+13, innerW, titleLH);   // top of last title line
+  ctx.fillStyle=C.muted; ctx.font=&quot;400 11px 'Space Mono',monospace&quot;;
+  wrapText(sub, tx, lastTitleTop + titleLH + 5, innerW, 14);       // a full line below the title
+}
+
+/* =========================================================
+   STAGE 2 — POSTERIOR MATCHING
+   ========================================================= */
+function drawPosterior(p, beat, bl){
+  const NARROW=W<640;
+  stageHeader(NARROW?'POSTERIOR MATCHING':'VARIABLE-LENGTH POSTERIOR MATCHING');
+  const step=Math.floor(p*(FRAMES.length-1)+0.001);
+  const recAng=OBS[Math.min(step, OBS.length-1)];
+  const post=posteriorAt(p);
+  const colors=post.map((v,i)=> (i===K&amp;&amp;v>=GAMMA)?C.confirm : (i===K?C.accent:'rgba(71,81,107,0.34)'));
+  let gx0,gx1,topY,baseY;
+
+  if(!NARROW){
+    const lcx=W*0.20, lcy=H*0.52, R=Math.min(W*0.145,H*0.19);
+    ring(lcx,lcy,R,C.line2,1.5);
+    for(let i=0;i<N;i++) tick(lcx,lcy,R,angleOf(i),5,C.line);
+    const rx=lcx+Math.cos(recAng)*R, ry=lcy+Math.sin(recAng)*R;
+    stroke(lcx,lcy,rx,ry,C.accent,2); dot(rx,ry,5,C.accent);
+    tag(lcx,lcy-R-16,'observed token \u00b7 t = '+step, C.muted);
+    gx0=W*0.42; gx1=W*0.95; topY=H*0.22; baseY=H*0.78;
+    beliefChart(gx0,gx1,topY,baseY,post,colors,{gamma:GAMMA,scale:0.9,maxBar:32});
+    tag((gx0+gx1)/2, topY-16, 'belief  \u03c0\u209c  over candidate messages', C.ink2);
+    if(beat>=2){
+      const a=clamp01((p-0.42)*3);
+      eqLines(lcx, lcy+R+16, a, [
+        'POSTERIOR MATCHING',
+        'u\u209c = F_U^{-1}( V\u209c(m) )',
+        'V\u209c(m) = \u03a3_{j=1}^{m-1} \u03c0\u209c\u208b\u2081(j) + R\u209c \u03c0\u209c\u208b\u2081(m)'
+      ]);
+    }
+  } else {
+    gx0=W*0.08; gx1=W*0.94; topY=H*0.36; baseY=H*0.82;
+    tag((gx0+gx1)/2, topY-30, 'belief  \u03c0\u209c  over candidate messages', C.ink2);
+    tag((gx0+gx1)/2, topY-14, 'observed token \u00b7 t = '+step, C.muted);
+    beliefChart(gx0,gx1,topY,baseY,post,colors,{gamma:GAMMA,scale:0.9,maxBar:24});
+  }
+
+  if(beat>=1) chip((gx0+gx1)/2, baseY+24, '\u03c0\u209c(m) \u221d \u03c0\u209c\u208b\u2081(m) \u00b7 \u2113\u209c(m)', C.accent, clamp01(p*2));
+  if(beat>=3 &amp;&amp; post[K]>=GAMMA){
+    tag((gx0+gx1)/2, baseY+46, 'top candidate crossed \u03b3 \u2192 decode', C.confirm);
+  }
+}
+
+/* =========================================================
+   STAGE 3 — CONFIRMATION (ACK / NACK belief)
+   ========================================================= */
+function drawConfirm(p, beat, bl){
+  const NARROW=W<640;
+  if(beat>=3){ // recap screen
+    const a=clamp01(bl*1.4);
+    const oy=H*0.30;
+    ctx.globalAlpha=a; dot(W*0.5,oy,16,C.confirm);
+    ctx.strokeStyle=C.surf; ctx.lineWidth=3; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(W*0.5-6,oy); ctx.lineTo(W*0.5-1,oy+5); ctx.lineTo(W*0.5+7,oy-6); ctx.stroke();
+    tag(W*0.5, oy+30, 'committed \u00b7 message decoded', C.confirm); ctx.globalAlpha=1;
+    const y=H*0.58, names=['OT synthesis','posterior matching','confirm'], cols=[C.accent,C.accent,C.confirm];
+    const bw=Math.min(W*0.26,210), x0=W*0.5-(bw*3+40)/2;
+    ctx.globalAlpha=a;
+    for(let i=0;i<3;i++){ const x=x0+i*(bw+20);
+      ctx.fillStyle=C.surf2; roundRect(x,y-20,bw,40,10); ctx.fill();
+      ctx.strokeStyle=cols[i]; ctx.lineWidth=1.5; roundRect(x,y-20,bw,40,10); ctx.stroke();
+      ctx.fillStyle=cols[i]; ctx.font=&quot;600 13px 'Space Grotesk',sans-serif&quot;; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(names[i], x+bw/2, y);
+      if(i<2) arrow(x+bw+4,y,x+bw+18,y,C.muted,2); }
+    ctx.globalAlpha=1; return;
+  }
+
+  // header tag
+  stageHeader('YAMAMOTO\u2013ITOH SCHEME');
+
+  // belief evolution over {ACK, NACK}
+  const t=clamp01((p-0.12)/0.62);
+  const ack = beat===0? 0.5 : 0.5+0.44*easeInOut(t);
+  const cvec=[ack, 1-ack];
+  const step = Math.max(0, Math.round(t*6));
+  const colors=[C.confirm, C.alert];
+  const thresholds=[
+    {idx:0, val:RHO_ACK,  label:'\u03c1_ack',  col:C.confirm},
+    {idx:1, val:RHO_NACK, label:'\u03c1_nack', col:C.alert}
+  ];
+  let gx0,gx1,topY,baseY;
+
+  if(!NARROW){
+    const lcx=W*0.20, lcy=H*0.50, R=Math.min(W*0.145,H*0.19);
+    ring(lcx,lcy,R,C.line2,1.5);
+    const aAck=-Math.PI/2, aNack=Math.PI/2;
+    const pAck=[lcx+Math.cos(aAck)*R, lcy+Math.sin(aAck)*R];
+    const pNack=[lcx+Math.cos(aNack)*R, lcy+Math.sin(aNack)*R];
+    dot(pAck[0],pAck[1],6,C.confirm); dot(pNack[0],pNack[1],6,C.alert);
+    label('ACK', pAck[0]+11, pAck[1], 0, C.confirm, 11.5);
+    label('NACK', pNack[0]+11, pNack[1], 0, C.alert, 11.5);
+    const ang = lerp(0, aAck, easeInOut(beat===0?0:t));
+    const rx=lcx+Math.cos(ang)*R, ry=lcy+Math.sin(ang)*R;
+    stroke(lcx,lcy,rx,ry,C.accent,2); dot(rx,ry,5,C.accent);
+    tag(lcx, lcy-R-16, 'verdict channel', C.muted);
+    tag(lcx, lcy+R+18, 'verify  m\u0302 = '+MHAT, C.ink2);
+    if(beat>=1) tag(lcx, lcy+R+36, 'confirmation symbol  r = '+step, C.muted);
+    gx0=W*0.48; gx1=W*0.84; topY=H*0.26; baseY=H*0.74;
+    beliefChart(gx0,gx1,topY,baseY,cvec,colors,{scale:1.12,maxBar:60,labels:['ACK','NACK'],vals:true,thresholds});
+    tag((gx0+gx1)/2, topY-16, 'confirmation belief \u00b7 {ACK, NACK}', C.ink2);
+    if(beat>=1) curveArrow(gx0-12, (baseY+topY)/2, lcx+R+8, lcy, C.accent2, clamp01(t*2));
+  } else {
+    gx0=W*0.20; gx1=W*0.80; topY=H*0.36; baseY=H*0.80;
+    tag((gx0+gx1)/2, topY-16, 'confirmation belief \u00b7 {ACK, NACK}', C.ink2);
+    beliefChart(gx0,gx1,topY,baseY,cvec,colors,{scale:1.12,maxBar:56,labels:['ACK','NACK'],vals:true,thresholds});
+  }
+
+  // single status line below the chart (never stacks on bars / percentages)
+  const committed = beat>=2 &amp;&amp; ack>=RHO_ACK;
+  if(committed) tag((gx0+gx1)/2, baseY+42, 'ACK \u2265 \u03c1_ack  \u2192  commit \u2713', C.confirm);
+  else if(beat>=1) tag((gx0+gx1)/2, baseY+42, 'verdict symbols over the feedback channel', C.muted);
+}
+
+/* ---------- shared belief chart ---------- */
+function beliefChart(x0,x1,topY,baseY,probs,colors,opts){
+  opts=opts||{}; const n=probs.length, H0=baseY-topY;
+  stroke(x0-6,baseY,x1,baseY,C.line2,1.5);
+  const gw=x1-x0, slot=gw/n, bw=Math.min(opts.maxBar||60, slot*0.62);
+  const scale=opts.scale || (Math.max(...probs,(opts.gamma||0))*1.15);
+  if(opts.gamma){ const gy=baseY-(opts.gamma/scale)*H0; ctx.setLineDash([5,5]); stroke(x0-6,gy,x1,gy,C.alert,1.4); ctx.setLineDash([]);
+    tagRight(x1+4, gy, '\u03b3', C.alert); }
+  if(opts.thresholds){ opts.thresholds.forEach(th=>{
+    const sx=x0+th.idx*slot, ex=sx+slot, gy=baseY-(th.val/scale)*H0;
+    ctx.setLineDash([5,4]); stroke(sx+6,gy,ex-6,gy, th.col||C.alert, 1.4); ctx.setLineDash([]);
+    ctx.fillStyle=th.col||C.alert; ctx.font=&quot;600 11px 'Space Mono',monospace&quot;; ctx.textAlign='right'; ctx.textBaseline='bottom';
+    ctx.fillText(th.label, ex-6, gy-3);
+  }); }
+  for(let i=0;i<n;i++){ const x=x0+i*slot+(slot-bw)/2, h=Math.min(1,probs[i]/scale)*H0;
+    ctx.fillStyle=colors[i]||C.accent2; roundRect(x,baseY-h,bw,h,3); ctx.fill();
+    if(opts.vals){ ctx.fillStyle=colors[i]||C.ink2; ctx.font=&quot;700 12px 'Space Mono',monospace&quot;; ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.fillText(Math.round(probs[i]*100)+'%', x+bw/2, baseY-h-5); }
+    if(opts.labels){ ctx.fillStyle=C.ink2; ctx.font=&quot;600 12px 'Space Mono',monospace&quot;; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText(opts.labels[i], x+bw/2, baseY+8); }
+  }
+}
+
+/* ---------- primitives ---------- */
+function ring(x,y,r,col,w){ ctx.beginPath(); ctx.arc(x,y,r,0,2*Math.PI); ctx.strokeStyle=col; ctx.lineWidth=w; ctx.stroke(); }
+function dot(x,y,r,col){ ctx.beginPath(); ctx.arc(x,y,r,0,2*Math.PI); ctx.fillStyle=col; ctx.fill(); }
+function stroke(x1,y1,x2,y2,col,w){ ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.strokeStyle=col; ctx.lineWidth=w; ctx.stroke(); }
+function tick(cx,cy,R,a,len,col){ stroke(cx+Math.cos(a)*(R-len),cy+Math.sin(a)*(R-len),cx+Math.cos(a)*(R+2),cy+Math.sin(a)*(R+2),col,1); }
+function arrow(x1,y1,x2,y2,col,w){ stroke(x1,y1,x2,y2,col,w); const a=Math.atan2(y2-y1,x2-x1),s=6; ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(x2-s*Math.cos(a-0.4),y2-s*Math.sin(a-0.4)); ctx.lineTo(x2-s*Math.cos(a+0.4),y2-s*Math.sin(a+0.4)); ctx.closePath(); ctx.fillStyle=col; ctx.fill(); }
+function curveArrow(x1,y1,x2,y2,col,al){ ctx.globalAlpha=al; ctx.beginPath(); ctx.moveTo(x1,y1); const mx=(x1+x2)/2,my=Math.min(y1,y2)-38; ctx.quadraticCurveTo(mx,my,x2,y2); ctx.strokeStyle=col; ctx.lineWidth=2; ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]); const a=Math.atan2(y2-my,x2-mx),s=6; ctx.beginPath(); ctx.moveTo(x2,y2); ctx.lineTo(x2-s*Math.cos(a-0.4),y2-s*Math.sin(a-0.4)); ctx.lineTo(x2-s*Math.cos(a+0.4),y2-s*Math.sin(a+0.4)); ctx.closePath(); ctx.fillStyle=col; ctx.fill(); ctx.globalAlpha=1; }
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function label(txt,x,y,a,col,size){ ctx.font=&quot;500 &quot;+(size||12)+&quot;px 'Space Mono', monospace&quot;; ctx.fillStyle=col; ctx.textAlign= Math.cos(a)<-0.01?'right':'left'; ctx.textBaseline='middle'; ctx.fillText(txt,x,y); }
+function tag(x,y,txt,col){ ctx.font=&quot;500 12px 'Space Mono', monospace&quot;; ctx.fillStyle=col; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(txt,x,y); }
+function tagRight(x,y,txt,col){ ctx.font=&quot;600 12px 'Space Mono', monospace&quot;; ctx.fillStyle=col; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(txt,x,y); }
+function stageHeader(txt){ ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillStyle=C.accent; ctx.font=&quot;700 12px 'Space Mono',monospace&quot;; ctx.fillText(txt, W*0.06, H*0.075); }
+function eqLines(cx, cyTop, alpha, lines){
+  ctx.globalAlpha=clamp01(alpha); ctx.textAlign='center'; ctx.textBaseline='top';
+  let y=cyTop;
+  lines.forEach((ln,i)=>{
+    if(i===0){ ctx.fillStyle=C.muted; ctx.font=&quot;700 10px 'Space Mono',monospace&quot;; ctx.fillText(ln,cx,y); y+=15; }
+    else { ctx.fillStyle=C.accent; ctx.font=&quot;500 11px 'Space Mono',monospace&quot;; ctx.fillText(ln,cx,y); y+=16; }
+  });
+  ctx.globalAlpha=1;
+}
+function chip(cx,cy,txt,col,al){ ctx.globalAlpha=clamp01(al); ctx.font=&quot;600 12px 'Space Mono', monospace&quot;; const w=ctx.measureText(txt).width+22,h=24;
+  ctx.fillStyle='rgba(247,242,231,0.94)'; roundRect(cx-w/2,cy-h/2,w,h,7); ctx.fill(); ctx.strokeStyle=col; ctx.lineWidth=1.2; roundRect(cx-w/2,cy-h/2,w,h,7); ctx.stroke();
+  ctx.fillStyle=col; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(txt,cx,cy); ctx.globalAlpha=1; }
+function wrapText(text,x,y,maxW,lh){ const words=text.split(' '); let line='',yy=y;
+  for(const w of words){ const test=line?line+' '+w:w; if(ctx.measureText(test).width>maxW &amp;&amp; line){ ctx.fillText(line,x,yy); line=w; yy+=lh; } else line=test; }
+  if(line) ctx.fillText(line,x,yy); return yy; }
+
+/* ---------- controls ---------- */
+function setPlayIcon(){ document.getElementById('playIcon').innerHTML = playing ? '<path d=&quot;M6 5h4v14H6zM14 5h4v14h-4z&quot;/>' : '<path d=&quot;M8 5v14l11-7z&quot;/>'; }
+document.getElementById('btnPlay').onclick=()=>{ if(elapsed>=TOTAL) elapsed=0; playing=!playing; setPlayIcon(); };
+document.getElementById('btnReplay').onclick=()=>{ elapsed=0; playing=true; setPlayIcon(); };
+document.getElementById('btnPrev').onclick=()=>jumpScene(-1);
+document.getElementById('btnNext').onclick=()=>jumpScene(1);
+function curScene(){ return BEATS[curBeatIndex()].scene; }
+function jumpScene(dir){ let s=Math.max(0,Math.min(2,curScene()+dir)); elapsed=beatStart(sceneBeats(s)[0].i); playing=true; setPlayIcon(); }
+const track=document.getElementById('track');
+track.onclick=(e)=>{ const r=track.getBoundingClientRect(); elapsed=clamp01((e.clientX-r.left)/r.width)*TOTAL; draw(); };
+const tabsEl=document.getElementById('tabs');
+SCENES.forEach(s=>{ const b=document.createElement('button'); b.className='tab'; b.dataset.s=s; b.innerHTML='<span class=&quot;dot&quot;></span>'+(s+1)+' \u00b7 '+SCENE_NAMES[s];
+  b.onclick=()=>{ elapsed=beatStart(sceneBeats(s)[0].i); playing=true; setPlayIcon(); }; tabsEl.appendChild(b); });
+function syncTabs(active){ [...tabsEl.children].forEach(c=>c.classList.toggle('active', +c.dataset.s===active)); }
+(function(){ let acc=0; SCENES.forEach(s=>{ acc+=sceneDur(s); if(s<2){ const t=document.createElement('div'); t.className='tick'; t.style.left=(acc/TOTAL*100)+'%'; document.getElementById('ticks').appendChild(t);} }); })();
+
+/* ---------- boot ---------- */
+resize(); setPlayIcon();
+if(document.fonts &amp;&amp; document.fonts.ready){ document.fonts.ready.then(()=>{ resize(); draw(); }); }
+requestAnimationFrame(loop);
+setTimeout(()=>{ playing=true; setPlayIcon(); }, 600);
+
+// embed mode + auto height reporting to a parent page
+if(location.search.indexOf('embed')>=0) document.body.classList.add('embed');
+function postHeight(){ try{ parent.postMessage({bamExplainerHeight: Math.ceil(document.body.getBoundingClientRect().height)}, '*'); }catch(e){} }
+window.addEventListener('load', postHeight);
+window.addEventListener('resize', postHeight);
+document.addEventListener('DOMContentLoaded', postHeight);
+if(window.ResizeObserver){ try{ new ResizeObserver(postHeight).observe(document.body); }catch(e){} }
+[150,500,900,1500].forEach(function(d){ setTimeout(postHeight, d); });
+</script>
+</body>
+</html>
+"></iframe>
     </div>
   </div>
 </section>
