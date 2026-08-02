@@ -30,16 +30,18 @@ app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 pool: SharedModelPool | None = None
 sessions: dict[str, DemoSession] = {}
+gen_lock: asyncio.Semaphore | None = None   # one GPU generation at a time
 
 
 @app.on_event("startup")
 async def startup() -> None:
-    global pool
+    global pool, gen_lock
     hf_token = os.getenv("HF_TOKEN")
     if hf_token:
         from huggingface_hub import login
         login(token=hf_token)
     pool = SharedModelPool(MODEL_NAME)
+    gen_lock = asyncio.Semaphore(1)   # created inside the event loop
     print("[server] Ready.")
 
 
@@ -68,6 +70,7 @@ async def ws_endpoint(websocket: WebSocket, session_id: str) -> None:
             lm1=pool.make_backend(),
             lm2=pool.make_backend(),
             stockfish_path=STOCKFISH_PATH,
+            gen_lock=gen_lock,
             bam_cfg=BAMConfig(
                 eps_noise_comm=0.5,
                 eps_noise_conf=0.3,

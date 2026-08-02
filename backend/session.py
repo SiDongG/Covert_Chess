@@ -46,6 +46,7 @@ class DemoSession:
         stockfish_path: str = "/usr/games/stockfish",
         bam_cfg:     Optional[BAMConfig]    = None,
         adapter_cfg: Optional[ArcMarkConfig] = None,
+        gen_lock:    Optional[asyncio.Semaphore] = None,
     ) -> None:
         self.lm1 = lm1
         self.lm2 = lm2
@@ -82,8 +83,10 @@ class DemoSession:
         self.history_2: list[dict] = []
         self.turn_count = 0
         # System prompts — updatable at runtime via set_prompts()
-        self.prompt_a = _DEFAULT_PROMPT_A   # LLM_1: mediates user input
-        self.prompt_b = _DEFAULT_PROMPT_B   # LLM_2: generates AI response
+        self.prompt_a = _DEFAULT_PROMPT_A
+        self.prompt_b = _DEFAULT_PROMPT_B
+        # Shared GPU lock — prevents concurrent model inference across sessions
+        self._gen_lock = gen_lock or asyncio.Semaphore(1)
 
     # ── public API ───────────────────────────────────────────────────────
 
@@ -271,18 +274,20 @@ class DemoSession:
                 asyncio.run_coroutine_threadsafe(queue.put(None), loop).result()
 
         thread = threading.Thread(target=_bg, daemon=True)
-        thread.start()
 
-        while True:
-            item = await queue.get()
-            if item is None:
-                break
-            tok_id, tok_str, belief = item
-            if tok_id == "__err__":
-                raise RuntimeError(tok_str)
-            yield tok_id, tok_str, belief
+        async with self._gen_lock:   # ← serialises GPU: at most one generation at a time
+            thread.start()
 
-        thread.join(timeout=10.0)
+            while True:
+                item = await queue.get()
+                if item is None:
+                    break
+                tok_id, tok_str, belief = item
+                if tok_id == "__err__":
+                    raise RuntimeError(tok_str)
+                yield tok_id, tok_str, belief
+
+            thread.join(timeout=10.0)
 
 
 # ── module-level helpers ─────────────────────────────────────────────────
