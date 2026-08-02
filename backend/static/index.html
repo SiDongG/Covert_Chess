@@ -371,7 +371,11 @@ function getWsUrl(manualUrl) {
   return null;
 }
 
-// ── state ────────────────────────────────────────────────────────────
+// Session ID: stable within a browser tab (survives refresh), new for each new tab.
+// This means refreshing doesn't consume a new session slot.
+const SESSION_ID = sessionStorage.getItem('bam-sid') ||
+                   ('bam-' + Math.random().toString(36).slice(2,9));
+sessionStorage.setItem('bam-sid', SESSION_ID);
 let game=new Chess(), board=null, ws=null;
 let pendingSan=null, pendingUci=null, pendingFrom=null, pendingTo=null;
 let busy=false;

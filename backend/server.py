@@ -21,7 +21,7 @@ from session             import DemoSession
 MODEL_NAME     = os.getenv("MODEL_NAME",     "meta-llama/Llama-3.1-8B-Instruct")
 STOCKFISH_PATH = os.getenv("STOCKFISH_PATH", "/usr/games/stockfish")
 SKILL_LEVEL    = int(os.getenv("SKILL_LEVEL",  "5"))
-MAX_SESSIONS   = int(os.getenv("MAX_SESSIONS", "4"))
+MAX_SESSIONS   = int(os.getenv("MAX_SESSIONS", "20"))  # raised for group pod
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -115,13 +115,14 @@ async def ws_endpoint(websocket: WebSocket, session_id: str) -> None:
                 await send({"type": "prompts_ok",
                             "prompt_a": session.prompt_a,
                             "prompt_b": session.prompt_b})
+            elif t == "set_difficulty":
+                level = int(data.get("level", 10))
+                session.chess.set_skill_level(level)
+                await send({"type": "difficulty_ok", "level": level})
             elif t == "get_prompts":
                 await send({"type": "prompts_ok",
                             "prompt_a": session.prompt_a,
                             "prompt_b": session.prompt_b})
-                level = int(data.get("level", 10))
-                session.chess.set_skill_level(level)
-                await send({"type": "difficulty_ok", "level": level})
             elif t == "ping":
                 await send({"type": "pong"})
     except WebSocketDisconnect:
@@ -131,3 +132,7 @@ async def ws_endpoint(websocket: WebSocket, session_id: str) -> None:
             await websocket.send_json({"type": "error", "msg": str(exc)})
         except Exception:
             pass
+    finally:
+        # Free the slot — without this, sessions accumulate until MAX_SESSIONS
+        # is hit and every new visitor gets "server at capacity".
+        sessions.pop(session_id, None)
