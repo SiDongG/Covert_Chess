@@ -230,7 +230,7 @@ main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
     <div id="connect-sub">Paste your RunPod URL below, or open this page directly from the RunPod dashboard.</div>
     <div id="connect-row">
       <input id="backend-input" type="text"
-             placeholder="https://7cwkj0tq9l2283-8000.proxy.runpod.net"
+             placeholder="wss://abc123-8000.proxy.runpod.net"
              autocomplete="off" spellcheck="false"/>
       <button id="connect-btn">Connect</button>
     </div>
@@ -348,7 +348,7 @@ Open-source models can occasionally make mistakes or produce repetitive text.</s
 // ── backend URL resolution ──────────────────────────────────────────
 // Set this to your pod URL so the demo auto-connects on load.
 // Update this line whenever you get a new pod.
-const BACKEND_URL = 'https://7cwkj0tq9l2283-8000.proxy.runpod.net';
+const BACKEND_URL = 'wss://7cwkj0tq9l2283-8000.proxy.runpod.net';
 
 function getWsUrl(manualUrl) {
   const sid = 'bam-' + Math.random().toString(36).slice(2,9);
@@ -491,14 +491,18 @@ function handleMsg(d){
       }
       break;
     case 'decode_result':
-      // Store for use when Decode button is clicked
-      lastDecodeCorrect=d.correct; lastDecoded=d.decoded; lastExpected=d.expected; lastVia=d.via||'ack';
+      // Store — displayed on Agent B's bubble (the incoming message),
+      // not on Agent A's outgoing bubble. Semantic reason: B's response
+      // is the evidence that B received the move correctly.
+      lastDecodeCorrect=d.correct; lastDecoded=d.decoded;
+      lastExpected=d.expected; lastVia=d.via||'ack';
       if(curABub){
+        // Agent A's bubble: show only the embedding info, not the decode result
         const bf=document.createElement('div');bf.className='bfoot';
         const eb=document.createElement('span');eb.className='emb-badge';
-        eb.innerHTML=`<span>${d.correct?'✓':'~'}</span> Embedded: ♟ ${curMoveSan}`;
+        eb.innerHTML=`<span>✓</span> Embedded: ♟ ${curMoveSan}`;
         const en=document.createElement('span');en.className='emb-note';
-        en.textContent=`decoded from text alone (M=${curLegalCount} legal moves${d.correct?'':' — mismatch'})`;
+        en.textContent=`M=${curLegalCount} legal moves · via ${d.via||'ack'}`;
         bf.appendChild(eb);bf.appendChild(en);curABub.appendChild(bf);
         const tw=mkBwrap('b','AGENT B');tw.id='__typing__';
         tw.querySelector('.bubble').innerHTML='<div class="tdots"><span></span><span></span><span></span></div>';
@@ -550,31 +554,41 @@ function handleMsg(d){
 
 function addDecodeBtn(bub){
   const bf=document.createElement('div');bf.className='bfoot';
+  bf.style.cssText='flex-direction:column;align-items:flex-start;gap:8px';
+
+  // ── Did B correctly receive MY move? (shown immediately, no click needed) ──
+  const acc=document.createElement('div');
+  acc.style.cssText='font-family:var(--mono);font-size:11.5px;width:100%';
+  if(lastDecodeCorrect){
+    acc.style.color='var(--green)';
+    const tag=lastVia==='forced'?' (forced at EOS)':' (ACK)';
+    acc.textContent=`✓ Move received correctly — ${lastExpected}${tag}`;
+  } else {
+    acc.style.color='var(--red)';
+    // lastDecoded is never null (always argmax now), so no "?"
+    acc.textContent=`✗ Decode mismatch — AI decoded ${lastDecoded}, you played ${lastExpected}. Boards may be misaligned.`;
+  }
+  bf.appendChild(acc);
+
+  // ── Decode button: reveals B's hidden engine reply ───────────────────
+  const btnRow=document.createElement('div');
+  btnRow.style.cssText='display:flex;align-items:center;gap:8px;width:100%';
   const hint=document.createElement('span');hint.className='dec-hint';
-  hint.textContent='contains hidden chess move';
+  hint.textContent='reply contains hidden engine move';
   const btn=document.createElement('button');btn.className='dec-btn';
-  btn.textContent='Decode hidden move ▸';
-  bf.appendChild(hint);bf.appendChild(btn);bub.appendChild(bf);
+  btn.textContent='Decode reply ▸';
+  btnRow.appendChild(hint);btnRow.appendChild(btn);
+  bf.appendChild(btnRow);
+  bub.appendChild(bf);
+
   btn.addEventListener('click',()=>{
     if(btn.classList.contains('done'))return;
     btn.classList.add('done');btn.textContent='✓ Decoded';hint.textContent='';
-    // Show the hidden move
     const rb=document.createElement('span');rb.className='rev-badge';
-    rb.innerHTML=`♟ ${storedEngineSan||'?'} — hidden move`;
-    bf.appendChild(rb);
-    // Show decode accuracy
-    const acc=document.createElement('div');
-    acc.style.cssText='font-family:var(--mono);font-size:11px;margin-top:5px;';
-    if(lastDecodeCorrect){
-      acc.style.color='var(--green)';
-      const via = lastVia==='forced' ? ' (forced decode at EOS)' : ' (ACK confirmed)';
-      acc.textContent=`✓ Your move decoded correctly — ${lastExpected}${via}`;
-    } else {
-      acc.style.color='var(--red)';
-      acc.textContent=`✗ Decode error — AI received ${lastDecoded||'?'}, you played ${lastExpected}. Boards may be misaligned.`;
-    }
-    bf.appendChild(acc);
+    rb.innerHTML=`♟ ${storedEngineSan||'?'} — engine reply`;
+    btnRow.appendChild(rb);
     scroll();
+    status('Your turn');
   });
 }
 

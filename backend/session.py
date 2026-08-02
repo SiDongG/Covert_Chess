@@ -127,24 +127,19 @@ class DemoSession:
         await send({"type": "turn_done", "agent": "llm1", "text": text_1})
 
         # 4. Recover decoded move
-        # Gap 1 fix: forced decode at EOS.
-        # Three cases, matching the paper's adaptive stopping rules:
-        #   (a) ACK fired during generation → dec_tracker.decoded is set (normal)
-        #   (b) EOS hit mid-CONF with top belief ≥ 0.5 → commit to argmax (forced decode)
-        #   (c) EOS hit with top belief < 0.5 → failed; multi-turn continuation not yet
-        #       implemented, so we report None (Gap 2).
+        # Adaptive stopping rules (paper §adaptive-stopping):
+        #   (a) ACK fired → dec_tracker.decoded is set (normal path)
+        #   (b) EOS hit without ACK → forced decode: always commit to argmax.
+        #       If belief is low it will likely be a mismatch, but "?" is
+        #       never correct — the argmax IS the decoder's best guess.
         dec_tracker = self.decoder_2.tracker
         decoded_idx = dec_tracker.decoded if dec_tracker else None
-        via = "ack"   # how the decode was obtained
+        via = "ack"
 
         if decoded_idx is None and dec_tracker is not None:
             eff     = dec_tracker.effective_pi()
-            top_p   = float(eff.max())
-            top_idx = int(eff.argmax())
-            if top_p >= 0.5:
-                # Forced decode: EOS arrived before ACK but belief is above chance
-                decoded_idx = top_idx
-                via = "forced"
+            decoded_idx = int(eff.argmax())   # always commit to argmax
+            via = "forced"
 
         decoded_uci = None
         if decoded_idx is not None:
