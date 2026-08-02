@@ -184,6 +184,8 @@ strong { color: var(--ink); font-weight: 600; }
 /* slots */
 .slot { border: 1.5px dashed var(--line-2); border-radius: var(--radius); background: repeating-linear-gradient(45deg, transparent, transparent 12px, var(--accent-soft) 12px, var(--accent-soft) 24px); padding: 40px 28px; text-align: center; color: var(--muted); font-family: var(--font-mono); font-size: 13px; letter-spacing: .04em; }
 .slot strong { display: block; color: var(--ink-2); font-family: var(--font-display); font-size: 16px; letter-spacing: 0; margin-bottom: 6px; font-weight: 600; }
+.explainer-embed { border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+.explainer-embed iframe { display: block; width: 100%; height: 1040px; border: 0; }
 
 /* challenge / fix */
 .cf { position: relative; border-left: 2px solid var(--line-2); padding: 4px 0 4px 26px; margin: 44px 0; max-width: 820px; }
@@ -382,12 +384,10 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
     <p class="eyebrow">the setting</p>
     <h2>Token generation is a channel with perfect feedback</h2>
     <div class="body-col">
-      <p>The one fact everything rests on: <strong>both agents see each token the instant it appears.</strong> Instead of letting the model sample freely, the sender gently <span class="key">biases</span> which token gets chosen so it carries a piece of the message — and because the receiver observes that same token, the sender always knows exactly what the receiver knows.</p>
-      <p>That makes the conversation a communication channel with <span class="key">perfect feedback</span>: a decoder that recovers the message from the text and a shared seed alone, never touching the model. Feedback is the lever we pull for reliability. Two adversaries sit on this channel — a <strong>passive eavesdropper</strong> reading the transcript in transit and an <strong>active adversary</strong> choosing prompts and observing outputs — and both must be left at chance. The full formalism is in the paper.</p>
+      <p>Both agents see each token the instant it appears, so the sender always knows exactly what the receiver knows. That makes the conversation a channel with <span class="key">perfect feedback</span> — the lever BAM pulls for reliability. The walkthrough below shows the whole scheme end to end; the full formalism is in the paper.</p>
     </div>
-    <div class="slot" style="margin-top:32px;">
-      <strong>[ visual slot — the feedback channel ]</strong>
-      Figure 1 schematic: token sampled, seen by both parties, side info from the seed, belief fed back into the next step.
+    <div class="explainer-embed" style="margin-top:28px;">
+      <iframe id="bamFrame" src="./bam-explainer.html?embed=1" title="How BAM works — animated walkthrough" loading="lazy" scrolling="no"></iframe>
     </div>
   </div>
 </section>
@@ -562,6 +562,14 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
 
 <script>
 document.getElementById('yr').textContent = new Date().getFullYear();
+
+// size the embedded explainer iframe to its content (no inner scrollbar)
+window.addEventListener('message', function (e) {
+  if (e.data && e.data.bamExplainerHeight) {
+    var f = document.getElementById('bamFrame');
+    if (f) f.style.height = (e.data.bamExplainerHeight + 10) + 'px';
+  }
+});
 
 // nav background on scroll
 (function () {
