@@ -328,25 +328,25 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
   <div class="wrap reveal-on-scroll">
     <p class="eyebrow">the gap</p>
     <h2>Reliably and securely hiding high-rate messages in inference-time LLM text — model- and prompt-agnostic.</h2>
-    <p class="lede" style="margin-top:20px;">Embedding signal in LLM output isn't new. Doing it on ordinary, variable-length conversation — where the receiver shares no model or prompt and reads <span class="key">only text</span> — is where existing schemes fall short. BAM closes that gap on three fronts at once: <span class="key">reliability</span>, <span class="key">security</span>, and <span class="key">rate</span>.</p>
+    <p class="lede" style="margin-top:20px;">Embedding signal in LLM output isn't new. Doing it on ordinary, variable-length conversation — where the receiver shares no model or prompt and reads <span class="key">only text</span> — is where existing schemes fall short. Our algorithm Burnashev Adaptive Posterior Matching Steganography closes that gap on three fronts at once: <span class="key">reliability</span>, <span class="key">security</span>, and <span class="key">rate</span>.</p>
 
     <div class="stats">
       <div class="stat">
-        <div class="num">≈0.2</div>
+        <div class="num">≈0.25</div>
         <div class="lab">bits / token
-          <span class="info" tabindex="0" role="note" aria-label="8-bit payload embedded in ~40–48 tokens, measured on the C4 News dataset.">i<span class="tip">8-bit payload embedded in ~40–48 tokens, measured on the C4 News dataset.</span></span>
+          <span class="info" tabindex="0" role="note" aria-label="Measured on the C4 News dataset. Across three models Llama-3.1-8B, Qwen-3.5-9B, Mistral-7B-v0.3 · temperature 1.0, top-50 sampling">i<span class="tip">8-bit payload embedded in ~40–48 tokens, measured on the C4 News dataset.</span></span>
         </div>
       </div>
       <div class="stat">
-        <div class="num">≈15%</div>
+        <div class="num">≈98%</div>
         <div class="lab">lower error
           <span class="info" tabindex="0" role="note" aria-label="Relative reduction in message-error rate versus existing inference-time watermarking baselines on conversational text.">i<span class="tip">Relative reduction in message-error rate versus existing inference-time watermarking baselines on conversational text.</span></span>
         </div>
       </div>
       <div class="stat">
-        <div class="num">3</div>
-        <div class="lab">open models
-          <span class="info" tabindex="0" role="note" aria-label="Llama-3.1-8B, Qwen-3.5-9B, Mistral-7B-v0.3 · temperature 1.0, top-50 sampling.">i<span class="tip">Llama-3.1-8B, Qwen-3.5-9B, Mistral-7B-v0.3 · temperature 1.0, top-50 sampling.</span></span>
+        <div class="num">≈0.025%</div>
+        <div class="lab">bit error rate
+          <span class="info" tabindex="0" role="note" aria-label="Almost error-free embedding ensuring reliable message transmission.">i<span class="tip">Llama-3.1-8B, Qwen-3.5-9B, Mistral-7B-v0.3 · temperature 1.0, top-50 sampling.</span></span>
         </div>
       </div>
     </div>
@@ -363,7 +363,7 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
         </ul>
       </div>
       <div class="card ours">
-        <div class="tag">this work — BAM</div>
+        <div class="tag">this work — Burnashev Adaptive Posterior Matching Steganography</div>
         <h3>A feedback channel over the conversation</h3>
         <ul>
           <li><b>Model- and prompt-agnostic</b> — the decoder only reads text</li>
@@ -382,9 +382,9 @@ footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; g
 <section class="section" id="setting">
   <div class="wrap reveal-on-scroll">
     <p class="eyebrow">the setting</p>
-    <h2>Token generation is a channel with perfect feedback</h2>
+    <h2>LLM inference channel is a channel with perfect feedback</h2>
     <div class="body-col">
-      <p>Both agents see each token the instant it appears, so the sender always knows exactly what the receiver knows. That makes the conversation a channel with <span class="key">perfect feedback</span> — the lever BAM pulls for reliability. The walkthrough below shows the whole scheme end to end; the full formalism is in the paper.</p>
+      <p>In the absence of editting, both parties see the same channel outputs. That makes the conversation a channel with <span class="key">perfect feedback</span> — which is the source of embedding gain. The walkthrough below shows the whole scheme end to end; the full formalism is in the paper.</p>
     </div>
     <div class="explainer-embed" style="margin-top:28px;">
       <iframe id="bamFrame" title="How BAM works — animated walkthrough" scrolling="no" srcdoc="<!DOCTYPE html>
@@ -859,38 +859,38 @@ if(window.ResizeObserver){ try{ new ResizeObserver(postHeight).observe(document.
 <!-- ============ 3 · METHOD — CHALLENGES & FIXES ============ -->
 <section class="section" id="challenges">
   <div class="wrap reveal-on-scroll">
-    <p class="eyebrow">method — bam</p>
+    <p class="eyebrow">method — detail</p>
     <h2>Four obstacles, four fixes</h2>
-    <p class="lede">No shared model or prompt, low-entropy text, turns of unpredictable length, and an adversary watching. Here is each obstacle in the order the protocol resolves it — and the mechanism that does the work.</p>
+    <p class="lede">No shared model or prompt, low-entropy text, LLM generation with unpredictable length, distortion-free and undetectablility. Here is each obstacle in the order the protocol resolves it — and the mechanism that does the work.</p>
 
     <!-- C1 -->
     <div class="cf">
       <div class="cf-num">01</div>
-      <div class="ct">Challenge 01 — the decoder can't see the model</div>
+      <div class="ct">Challenge 01 — the decoder has no access to token distribution</div>
       <h3>Recover the symbol from text alone</h3>
-      <p>The receiver has no token probabilities, no prompt, and no model in hand. It must read back the transmitted symbol using <strong>only the words and the shared seed</strong> — so the symbol has to live in something recoverable from the text itself.</p>
-      <div class="fix-label">the fix — circle geometry + an OT coupling</div>
+      <p>The receiver has no token probabilities, no prompt, and no model in hand. It must read back the transmitted symbol using <strong>shared transcript and the seed</strong></p>
+      <div class="fix-label">the fix — channel synthesis using OT coupling</div>
       <p>Following ArcMark<span class="info" tabindex="0" role="note" aria-label="ArcMark places tokens and message symbols on a unit circle and biases sampling by angular distance; we build our channel on its coupling.">i<span class="tip">ArcMark: tokens and symbols placed on a unit circle, sampling biased by angular distance.</span></span>, every token and every message symbol sits on a <span class="key">unit circle</span>: the seed assigns each token an angle, and the target symbol defines a target angle. To transmit it, the encoder solves an <span class="key">optimal-transport coupling</span><span class="info" tabindex="0" role="note" aria-label="A constrained coupling solved with the Sinkhorn algorithm; samples a token whose angle is near the target while holding the observable token distribution exactly equal to the base model's.">i<span class="tip">Constrained coupling, solved via Sinkhorn: nudges toward the target angle while preserving the base marginal.</span></span> that picks a token whose angle lands near the target while preserving the model's own word statistics. The receiver re-derives that angle from the token and seed — <strong>no model in the loop.</strong> That same statistics-preserving property is what buys security in Challenge 04.</p>
     </div>
 
     <!-- C2 -->
     <div class="cf">
       <div class="cf-num">02</div>
-      <div class="ct">Challenge 02 — turns vary in length, and chat is low-entropy</div>
+      <div class="ct">Challenge 02 — LLM generation vary in length under distortion-freeness</div>
       <h3>Adapt to the LLM's variable-length generation</h3>
-      <p>A real conversational turn can end after eight tokens or run past eighty, and most words in a chat have one obvious continuation, so <strong>any single token carries almost nothing.</strong> A fixed codeword with a preset budget breaks both ways — it fails when the turn stops short and can't exploit one that keeps going.</p>
+      <p>A real LLM generated conversational have arbitrary generation length (we don't assume any form of prompt tuning). A fixed codeword with a preset budget breaks both ways — it fails when the turn stops short and can't exploit one that keeps going.</p>
       <div class="fix-label">the fix — variable-length coding via posterior matching</div>
-      <p>Instead of a codebook fixed in advance, the encoder builds one <span class="key">online</span>: at each step it maps the message to the next symbol against the decoder's <span class="key">current belief</span>, and both parties update that belief token by token. The message is spread across many low-entropy tokens rather than overloaded onto one, and because the belief is shared there's no preset budget — the protocol simply <strong>keeps going while uncertain and stops the moment the belief is confident enough.</strong> That variable stopping time is the <em>sequentiality gain</em>.</p>
+      <p>Instead of a codebook fixed in advance, the encoder builds <span class="key">online codebook</span>: at each step it maps the message to the next symbol against the decoder's <span class="key">current belief</span>, and both parties update that belief token by token. The belief is shared there's no preset budget — the protocol simply <strong>keeps generating while uncertain and stops the moment the belief is confident enough.</strong> That variable stopping time is the <em>sequentiality gain</em>.</p>
     </div>
 
     <!-- C3 -->
     <div class="cf">
       <div class="cf-num">03</div>
-      <div class="ct">Challenge 03 — a concentrated belief can still be wrong</div>
-      <h3>Low-error, high-rate embedding</h3>
-      <p>Posterior matching localizes the message, but the leading candidate can be <strong>confident and wrong</strong> — and that is exactly where prior schemes bleed reliability. Embedding rate alone doesn't characterize a scheme: what matters is how reliably the message is recovered within the tokens a turn actually gives you.</p>
+      <div class="ct">Challenge 03 — chat can be low-entropy and prior methods are unreliable at high rate</div>
+      <h3>Yamamoto-Itoh feedback code</h3>
+      <p>Posterior matching localizes the message, but it does not improve the decoding error exponent by itself. The leading candidate can be <strong>confident and wrong</strong>. Embedding rate alone doesn't characterize a scheme: error exponent characterize the rate at which decoding error decays asymptotically.</p>
       <div class="fix-label">the fix — a Yamamoto–Itoh decode-and-confirm phase</div>
-      <p>Once one candidate dominates, BAM stops localizing and starts <span class="key">verifying</span>: it treats confirmation as a simple accept/reject test and re-transmits confirmation symbols before committing. This <em>adaptivity gain</em> is what classical feedback coding uses to push decoding error down at a given rate — and it's what lets BAM stay reliable in the few tokens a conversational turn provides. Posterior matching plus this confirmation phase is the feedback code we call <strong>BAM</strong>.</p>
+      <p>Once one candidate dominates, BAM stops localizing and starts <span class="key">verifying</span>: it treats confirmation as a simple binary hypothesis test and re-transmits confirmation symbols before committing. This <em>adaptivity gain</em> is what classical feedback coding uses to push decoding error down at a given rates. </p>
       <details class="more">
         <summary>Where the reliability gain comes from</summary>
         <div class="inner">
@@ -906,7 +906,7 @@ if(window.ResizeObserver){ try{ new ResizeObserver(postHeight).observe(document.
       <h3>Guarantee security and the exact distribution</h3>
       <p>Every one of those biased tokens must leave <strong>no statistical trace</strong> — nothing a passive monitor could learn to catch, and nothing an adaptive API adversary could distinguish from ordinary generation.</p>
       <div class="fix-label">the fix — exact word statistics + a keyed pseudorandom function</div>
-      <p>The coupling from Challenge 01 preserves the base model's next-token distribution <span class="key">exactly</span>, so averaged over the secret key the observable text carries precisely the model's own word statistics — no distortion for a monitor to latch onto. A keyed <span class="key">pseudorandom function</span>, freshly separated per session, supplies the per-token side information, and a cryptographic reduction makes the whole transcript <strong>provably indistinguishable from ordinary generation for any polynomial-time adversary.</strong></p>
+      <p>The coupling from Challenge 01 preserves the base model's next-token distribution <span class="key">exactly</span>, so averaged over the secret key the observable text carries precisely the model's own word statistics — no distortion for a monitor to latch onto. A keyed, nonce based <span class="key">pseudorandom function</span>, supplies the per-token side information, and a cryptographic reduction makes the whole transcript <strong>provably indistinguishable from ordinary generation for any polynomial-time adversary.</strong></p>
       <p>The upshot: <strong>no efficient test on the visible text does better than a coin flip.</strong> The full theorem and proof are in the paper.</p>
     </div>
   </div>
@@ -918,9 +918,10 @@ if(window.ResizeObserver){ try{ new ResizeObserver(postHeight).observe(document.
     <p class="eyebrow">does it work</p>
     <h2>Reliable — and undetectable</h2>
     <div class="points">
-      <div class="point"><span class="n">01</span><p><strong>Far more reliable.</strong> Across three language models the adaptive scheme recovers the hidden message where <strong>fixed-budget baselines fail</strong> — and in fewer tokens.</p></div>
+      <div class="point"><span class="n">01</span><p><strong>Far more reliable.</strong> Across three language models our algorithm offers about 98% drop in error rate at same embedding rate, compared to current baselines.</p></div>
       <div class="point"><span class="n">02</span><p><strong>Provably secure.</strong> The transcript is <strong>computationally indistinguishable from ordinary generation for any polynomial-time adversary</strong> — the guarantee and its proof are in the paper.</p></div>
-      <div class="point"><span class="n">03</span><p><strong>Across natural dialogue.</strong> Hidden games play out over ordinary multi-turn conversations, payloads carried turn by turn.</p></div>
+      <div class="point"><span class="n">03</span><p><strong>Information-theoretically motivated.</strong> Our algorithm is inspired by information-theoretic optimal feedback coding schemes.</p></div>
+      <div class="point"><span class="n">04</span><p><strong>New security threat.</strong> Our strong embedding performance over conversational text without model or prompt sharing means that AI mediated text can now carry high information undetectably.</p></div>
     </div>
     <p class="body-col" style="margin-top:22px;">Full numbers, baselines, and ablations are in the paper.</p>
   </div>
@@ -943,7 +944,7 @@ if(window.ResizeObserver){ try{ new ResizeObserver(postHeight).observe(document.
     <p class="eyebrow">try it live</p>
     <h2>Watch two agents talk — and decode the secret</h2>
     <div class="steps">
-      <div class="step"><div class="k">STEP 1</div><h3>Pick a hidden game</h3><p>Choose the secret task and the cover conversation the agents will use.</p></div>
+      <div class="step"><div class="k">STEP 1</div><h3>Play a chess game with AI</h3><p>Make a chess move and enter a prompt to emit an AI mediated message.</p></div>
       <div class="step"><div class="k">STEP 2</div><h3>Run the conversation</h3><p>The agents chat naturally while the payload rides along underneath.</p></div>
       <div class="step"><div class="k">STEP 3</div><h3>Reveal &amp; decode</h3><p>See the hidden message recovered from the text alone, turn by turn.</p></div>
     </div>
