@@ -488,25 +488,31 @@ function handleMsg(d){
       if(d.agent==='llm1'&&curABub){rmCur(curABub);curABub.textContent=d.text;scroll();}
       else if(d.agent==='llm2'&&curBBub){
         rmCur(curBBub);curBBub.textContent=d.text;
-        // Fix 2: capture storedEngineSan NOW (before board_update clears it)
-        addDecodeBtn(curBBub, storedEngineSan);
+        // Snapshot engine data inside addDecodeBtn (still set here, before
+        // board_update clears it), and resolve SAN lazily at click time.
+        addDecodeBtn(curBBub);
         scroll();
       }
       break;
-    case 'decode_result':
+    case 'decode_result': {
       lastDecodeCorrect=d.correct; lastDecoded=d.decoded;
       lastExpected=d.expected; lastVia=d.via||'ack';
+      // Strip any internal-mechanism annotations the backend may append,
+      // e.g. "e2e4 (forced at EOS)" -> "e2e4", "b1a3 via forced" -> "b1a3".
+      const clean=s=>String(s||'').replace(/\s*\(.*?\)\s*/g,'').replace(/\s+via\s+.*$/i,'').trim();
+      const expClean=clean(d.expected);
+      const decClean=clean(d.decoded);
       if(curABub){
-        // Fix 1: decode result shown on Agent A's bubble (when you send),
-        // no internal mechanism labels ("forced", "via", "ACK")
+        // Decode result shown on Agent A's bubble (at send time).
+        // No internal mechanism labels ("forced", "via", "ACK", "EOS").
         const bf=document.createElement('div');bf.className='bfoot';
         const en=document.createElement('span');en.className='emb-note';
         if(d.correct){
           en.style.color='var(--green)';
-          en.textContent=`M=${curLegalCount} legal moves · received correctly — ${d.expected}`;
+          en.textContent=`M=${curLegalCount} legal moves · received correctly — ${expClean}`;
         } else {
           en.style.color='var(--red)';
-          en.textContent=`M=${curLegalCount} · decode mismatch — AI decoded ${d.decoded}, you played ${d.expected}. Boards may be misaligned.`;
+          en.textContent=`✗ Decode mismatch — AI decoded ${decClean}, you played ${expClean}. Boards may be misaligned.`;
         }
         bf.appendChild(en);curABub.appendChild(bf);
         const tw=mkBwrap('b','AGENT B');tw.id='__typing__';
@@ -514,6 +520,7 @@ function handleMsg(d){
         curExDiv.appendChild(tw);scroll();
       }
       status('Agent B decoding · Stockfish · generating watermarked reply…');break;
+    }
     case 'engine_move':
       storedEngineMove=d.move;storedEngineSan=d.san;
       const tw=document.getElementById('__typing__');if(tw)tw.remove();
@@ -548,14 +555,20 @@ function handleMsg(d){
       document.getElementById('prompt-b-input').value = d.prompt_b || '';
       break;
     case 'prompts_ok':
-      // Response to set_prompts: show confirmation then close
+      // Only treat as an Apply confirmation if we actually clicked Apply.
+      // (An older backend may answer get_prompts with prompts_ok, which would
+      // otherwise auto-close the panel the moment it opens.)
       document.getElementById('prompt-a-input').value = d.prompt_a || '';
       document.getElementById('prompt-b-input').value = d.prompt_b || '';
-      document.getElementById('prompts-status').textContent = '✓ Applied';
-      setTimeout(() => {
-        document.getElementById('prompts-status').textContent = '';
-        document.getElementById('settings-panel').classList.remove('show');
-      }, 1200);
+      if (applyInFlight) {
+        applyInFlight = false;
+        settingsOpen = false;
+        document.getElementById('prompts-status').textContent = '✓ Applied';
+        setTimeout(() => {
+          document.getElementById('prompts-status').textContent = '';
+          document.getElementById('settings-panel').classList.remove('show');
+        }, 1200);
+      }
       break;
     case 'difficulty_ok': status(`Engine: ${document.getElementById('difficulty-select').options[document.getElementById('difficulty-select').selectedIndex].text}`);break;
     case 'error':
@@ -563,8 +576,14 @@ function handleMsg(d){
   }
 }
 
-function addDecodeBtn(bub, engineSan){
-  // engineSan is captured at call time (before board_update clears storedEngineSan)
+function addDecodeBtn(bub){
+  // Snapshot the engine data for this exchange NOW (still set at this point;
+  // board_update clears it shortly after). SAN is resolved at click time,
+  // falling back to a UCI-derived SAN so we never render "?".
+  const snapSan  = storedEngineSan;
+  const snapMove = storedEngineMove;
+  const snapFen  = game.fen();   // board state before the engine move is applied
+
   const bf=document.createElement('div');bf.className='bfoot';
   const hint=document.createElement('span');hint.className='dec-hint';
   hint.textContent='reply contains hidden engine move';
@@ -574,9 +593,18 @@ function addDecodeBtn(bub, engineSan){
 
   btn.addEventListener('click',()=>{
     if(btn.classList.contains('done'))return;
+    let san=snapSan;
+    if(!san && snapMove){
+      try{
+        const tmp=new Chess(snapFen);
+        const mv=tmp.move({from:snapMove.slice(0,2),to:snapMove.slice(2,4),
+                           promotion:(snapMove.slice(4,5)||'q')});
+        if(mv)san=mv.san;
+      }catch(e){/* ignore */}
+    }
     btn.classList.add('done');btn.textContent='✓ Decoded';hint.textContent='';
     const rb=document.createElement('span');rb.className='rev-badge';
-    rb.innerHTML=`♟ ${engineSan||'?'} — engine reply`;
+    rb.innerHTML=`♟ ${san||'engine move'} — engine reply`;
     bf.appendChild(rb);
     scroll();
     status('Your turn');
@@ -607,21 +635,26 @@ function initSettings() {
   }
 }
 
+let settingsOpen = false;
+let applyInFlight = false;
 document.getElementById('settings-btn').addEventListener('click', () => {
   const panel = document.getElementById('settings-panel');
-  panel.classList.toggle('show');
+  settingsOpen = !panel.classList.contains('show');
+  panel.classList.toggle('show', settingsOpen);
   // Fetch current prompts from server when opening
-  if (panel.classList.contains('show') && ws && ws.readyState === WebSocket.OPEN) {
+  if (settingsOpen && ws && ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({type: 'get_prompts'}));
   }
 });
 
 document.getElementById('settings-close').addEventListener('click', () => {
+  settingsOpen = false;
   document.getElementById('settings-panel').classList.remove('show');
 });
 
 document.getElementById('apply-prompts-btn').addEventListener('click', () => {
   if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  applyInFlight = true;
   ws.send(JSON.stringify({
     type:     'set_prompts',
     prompt_a: document.getElementById('prompt-a-input').value.trim(),
