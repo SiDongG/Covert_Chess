@@ -488,26 +488,27 @@ function handleMsg(d){
       if(d.agent==='llm1'&&curABub){rmCur(curABub);curABub.textContent=d.text;scroll();}
       else if(d.agent==='llm2'&&curBBub){
         rmCur(curBBub);curBBub.textContent=d.text;
-        addDecodeBtn(curBBub);
-        // do NOT set busy=false here — wait for board_update so board is
-        // in the correct state before the user can drag the next piece
+        // Fix 2: capture storedEngineSan NOW (before board_update clears it)
+        addDecodeBtn(curBBub, storedEngineSan);
         scroll();
       }
       break;
     case 'decode_result':
-      // Store — displayed on Agent B's bubble (the incoming message),
-      // not on Agent A's outgoing bubble. Semantic reason: B's response
-      // is the evidence that B received the move correctly.
       lastDecodeCorrect=d.correct; lastDecoded=d.decoded;
       lastExpected=d.expected; lastVia=d.via||'ack';
       if(curABub){
-        // Agent A's bubble: show only the embedding info, not the decode result
+        // Fix 1: decode result shown on Agent A's bubble (when you send),
+        // no internal mechanism labels ("forced", "via", "ACK")
         const bf=document.createElement('div');bf.className='bfoot';
-        const eb=document.createElement('span');eb.className='emb-badge';
-        eb.innerHTML=`<span>✓</span> Embedded: ♟ ${curMoveSan}`;
         const en=document.createElement('span');en.className='emb-note';
-        en.textContent=`M=${curLegalCount} legal moves · via ${d.via||'ack'}`;
-        bf.appendChild(eb);bf.appendChild(en);curABub.appendChild(bf);
+        if(d.correct){
+          en.style.color='var(--green)';
+          en.textContent=`M=${curLegalCount} legal moves · received correctly — ${d.expected}`;
+        } else {
+          en.style.color='var(--red)';
+          en.textContent=`M=${curLegalCount} · decode mismatch — AI decoded ${d.decoded}, you played ${d.expected}. Boards may be misaligned.`;
+        }
+        bf.appendChild(en);curABub.appendChild(bf);
         const tw=mkBwrap('b','AGENT B');tw.id='__typing__';
         tw.querySelector('.bubble').innerHTML='<div class="tdots"><span></span><span></span><span></span></div>';
         curExDiv.appendChild(tw);scroll();
@@ -541,7 +542,13 @@ function handleMsg(d){
       storedEngineMove=storedEngineSan=null;
       lastDecodeCorrect=false;lastDecoded=lastExpected=null;
       busy=false;updateSend();break;
+    case 'prompts_loaded':
+      // Response to get_prompts: just populate fields, don't close or show status
+      document.getElementById('prompt-a-input').value = d.prompt_a || '';
+      document.getElementById('prompt-b-input').value = d.prompt_b || '';
+      break;
     case 'prompts_ok':
+      // Response to set_prompts: show confirmation then close
       document.getElementById('prompt-a-input').value = d.prompt_a || '';
       document.getElementById('prompt-b-input').value = d.prompt_b || '';
       document.getElementById('prompts-status').textContent = '✓ Applied';
@@ -556,41 +563,21 @@ function handleMsg(d){
   }
 }
 
-function addDecodeBtn(bub){
+function addDecodeBtn(bub, engineSan){
+  // engineSan is captured at call time (before board_update clears storedEngineSan)
   const bf=document.createElement('div');bf.className='bfoot';
-  bf.style.cssText='flex-direction:column;align-items:flex-start;gap:8px';
-
-  // ── Did B correctly receive MY move? (shown immediately, no click needed) ──
-  const acc=document.createElement('div');
-  acc.style.cssText='font-family:var(--mono);font-size:11.5px;width:100%';
-  if(lastDecodeCorrect){
-    acc.style.color='var(--green)';
-    const tag=lastVia==='forced'?' (forced at EOS)':' (ACK)';
-    acc.textContent=`✓ Move received correctly — ${lastExpected}${tag}`;
-  } else {
-    acc.style.color='var(--red)';
-    // lastDecoded is never null (always argmax now), so no "?"
-    acc.textContent=`✗ Decode mismatch — AI decoded ${lastDecoded}, you played ${lastExpected}. Boards may be misaligned.`;
-  }
-  bf.appendChild(acc);
-
-  // ── Decode button: reveals B's hidden engine reply ───────────────────
-  const btnRow=document.createElement('div');
-  btnRow.style.cssText='display:flex;align-items:center;gap:8px;width:100%';
   const hint=document.createElement('span');hint.className='dec-hint';
   hint.textContent='reply contains hidden engine move';
   const btn=document.createElement('button');btn.className='dec-btn';
   btn.textContent='Decode reply ▸';
-  btnRow.appendChild(hint);btnRow.appendChild(btn);
-  bf.appendChild(btnRow);
-  bub.appendChild(bf);
+  bf.appendChild(hint);bf.appendChild(btn);bub.appendChild(bf);
 
   btn.addEventListener('click',()=>{
     if(btn.classList.contains('done'))return;
     btn.classList.add('done');btn.textContent='✓ Decoded';hint.textContent='';
     const rb=document.createElement('span');rb.className='rev-badge';
-    rb.innerHTML=`♟ ${storedEngineSan||'?'} — engine reply`;
-    btnRow.appendChild(rb);
+    rb.innerHTML=`♟ ${engineSan||'?'} — engine reply`;
+    bf.appendChild(rb);
     scroll();
     status('Your turn');
   });

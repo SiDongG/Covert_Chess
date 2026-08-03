@@ -8,7 +8,6 @@ workers MUST be 1: the shared model lives in a single process.
 from __future__ import annotations
 import os
 from pathlib import Path
-import asyncio
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
@@ -124,7 +123,7 @@ async def ws_endpoint(websocket: WebSocket, session_id: str) -> None:
                 session.chess.set_skill_level(level)
                 await send({"type": "difficulty_ok", "level": level})
             elif t == "get_prompts":
-                await send({"type": "prompts_ok",
+                await send({"type": "prompts_loaded",
                             "prompt_a": session.prompt_a,
                             "prompt_b": session.prompt_b})
             elif t == "ping":
