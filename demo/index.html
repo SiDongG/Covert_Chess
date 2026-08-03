@@ -172,7 +172,12 @@ main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
            background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.45);
            border-radius:20px;padding:2px 10px;
            font-family:var(--mono);font-size:12px;font-weight:700;color:#fff}
-.emb-note{font-family:var(--mono);font-size:11px;opacity:.7}
+.emb-note{display:inline-flex;align-items:center;font-family:var(--mono);
+          font-size:11.5px;font-weight:700;line-height:1.4;
+          padding:3px 9px;border-radius:8px;border:1.5px solid transparent;
+          white-space:normal}
+.emb-note.ok{background:#E4F5EC;border-color:#2E7D57;color:#1C5C3D}
+.emb-note.bad{background:#FCE7E0;border-color:#B4472F;color:#8F3320}
 .dec-btn{font-family:var(--mono);font-size:12px;color:var(--blue);background:none;
          border:1px solid var(--line);border-radius:6px;padding:4px 11px;
          cursor:pointer;transition:all .15s;white-space:nowrap}
@@ -508,10 +513,10 @@ function handleMsg(d){
         const bf=document.createElement('div');bf.className='bfoot';
         const en=document.createElement('span');en.className='emb-note';
         if(d.correct){
-          en.style.color='var(--green)';
-          en.textContent=`M=${curLegalCount} legal moves · received correctly — ${expClean}`;
+          en.classList.add('ok');
+          en.textContent=`✓ M=${curLegalCount} legal moves · received correctly — ${expClean}`;
         } else {
-          en.style.color='var(--red)';
+          en.classList.add('bad');
           en.textContent=`✗ Decode mismatch — AI decoded ${decClean}, you played ${expClean}. Boards may be misaligned.`;
         }
         bf.appendChild(en);curABub.appendChild(bf);
@@ -613,9 +618,14 @@ function addDecodeBtn(bub){
 
 // ── settings panel ────────────────────────────────────────────────────
 const DEFAULT_PROMPT_A = (
-  "You are a conversational assistant mediating a user's messages. " +
-  "The user has given you a topic or message — write a natural, casual reply " +
-  "as if you are the user speaking to a friend. " +
+  "You are a paraphrasing relay. Rewrite the user's message as a longer, " +
+  "natural-sounding message that expresses the SAME intent, as if the user " +
+  "themselves were saying it to a friend. Do NOT answer or respond to the " +
+  "message — expand and rephrase it. For example, if the user writes " +
+  "\"how are you doing\", output something like \"Hey, it's been way too long " +
+  "since we last caught up! I was just thinking about you and wondering how " +
+  "things have been going in your life lately.\" — never a reply like " +
+  "\"I'm doing fine.\" " +
   "Keep it 2-3 sentences, conversational and flowing. " +
   "Never mention chess, games, or any hidden information."
 );
