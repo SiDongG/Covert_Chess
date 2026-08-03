@@ -21,11 +21,15 @@ from chess_engine          import ChessInterface
 Sender = Callable[[dict], Any]
 
 _DEFAULT_PROMPT_A = (
-    "You are a conversational assistant mediating a user's messages. "
-    "The user has given you a topic or message — write a natural, casual reply "
-    "as if you are the user speaking to a friend. "
-    "Keep it 2-3 sentences, conversational and flowing. "
-    "Never mention chess, games, or any hidden information."
+    "You are a paraphrasing relay. Rewrite the user's message as a longer, "
+    "natural-sounding message that expresses the SAME intent, as if the user "
+    "themselves were saying it to a friend. Do NOT answer or respond to the "
+    "message — expand and rephrase it. For example, if the user writes "
+    "\"how are you doing\", output something like \"Hey, it's been way too long "
+    "since we last caught up! I was just thinking about you and wondering how "
+    "things have been going in your life lately.\" — never a reply like "
+    "\"I'm doing fine.\" "
+    "Keep it 2-3 sentences, conversational and flowing."
 )
 
 _DEFAULT_PROMPT_B = (
@@ -110,7 +114,8 @@ class DemoSession:
         self.decoder_2.expect_message(M)
 
         # 3. Stream LLM_1's watermarked turn
-        prompt_1    = self._build_prompt(self.lm1, self.history_1, chat, self.prompt_a)
+        prompt_1    = self._build_prompt(self.lm1, self.history_1, chat, self.prompt_a,
+                                         relay=True)
         prompt_ids1 = self.lm1.encode_tensor(prompt_1)
         text_1_buf: list[str] = []
 
@@ -237,11 +242,27 @@ class DemoSession:
 
     def _build_prompt(
         self, lm: HFLMBackend, history: list[dict],
-        new_user_msg: str, system_prompt: str
+        new_user_msg: str, system_prompt: str, relay: bool = False
     ) -> str:
         messages = [{"role": "system", "content": system_prompt}]
         messages.extend(history[-_MAX_HISTORY:])
-        messages.append({"role": "user", "content": new_user_msg})
+        if relay:
+            # Agent A paraphrases/relays the user's message rather than
+            # answering it. If we place the raw message in the user turn,
+            # an instruct model will answer it regardless of the system
+            # prompt (the chat template trains it to respond to the last
+            # user turn). Wrapping it as an explicit rewrite task makes the
+            # message an OBJECT to transform, not a turn to reply to.
+            user_content = (
+                "Rewrite the following message as a longer, natural-sounding "
+                "message that expresses the SAME intent, as if you were saying "
+                "it to a friend. Do NOT answer or respond to it — only rephrase "
+                "and expand it. Output only the rewritten message, nothing else.\n\n"
+                f'Message: "{new_user_msg}"'
+            )
+            messages.append({"role": "user", "content": user_content})
+        else:
+            messages.append({"role": "user", "content": new_user_msg})
         return lm.tokenizer.apply_chat_template(
             messages, tokenize=False, add_generation_prompt=True
         )
@@ -331,11 +352,14 @@ def _generate_tokens(
                 "done":     dec_tracker.done,
             }
 
-        tok_str = lm.decode([tok_id])
+        # Stop tokens (EOS / <|eot_id|>) must be processed by the decoder
+        # above (already done) but must NOT be streamed to the client as
+        # visible text. Break before yielding so the token string never leaks.
+        if tok_id in stop_ids:
+            break
+
         ids     = torch.cat(
             [ids, torch.tensor([[tok_id]], device=lm.device)], dim=1
         )
+        tok_str = lm.decode([tok_id])
         yield tok_id, tok_str, belief
-
-        if tok_id in stop_ids:
-            break
