@@ -172,11 +172,11 @@ main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
            background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.45);
            border-radius:20px;padding:2px 10px;
            font-family:var(--mono);font-size:12px;font-weight:700;color:#fff}
-.emb-note{display:inline-flex;align-items:center;font-family:var(--mono);
-          font-size:11.5px;font-weight:700;line-height:1.4;
-          padding:3px 9px;border-radius:8px;border:1.5px solid transparent;
-          white-space:normal}
-.emb-note.ok{background:#E4F5EC;border-color:#2E7D57;color:#1C5C3D}
+.emb-note{display:inline-block;font-family:var(--mono);
+          font-size:11.5px;font-weight:600;line-height:1.5;
+          padding:5px 10px;border-radius:8px;border:1.5px solid transparent;
+          white-space:normal;max-width:100%}
+.emb-note.ok{background:#E4F5EC;border-color:#2E7D57;color:#1C5C3D;font-weight:700}
 .emb-note.bad{background:#FCE7E0;border-color:#B4472F;color:#8F3320}
 .dec-btn{font-family:var(--mono);font-size:12px;color:var(--blue);background:none;
          border:1px solid var(--line);border-radius:6px;padding:4px 11px;
@@ -330,13 +330,12 @@ main{display:flex;flex-direction:row;flex:1 1 0;min-height:0;overflow:hidden}
           <!-- Fix 3: drag hint with info icon -->
           <span id="drag-hint">← Drag a piece to select your move</span>
           <span class="info-icon" tabindex="0" aria-label="How this works">ⓘ
-            <span class="info-tip">Type a conversation prompt for LLM-A to generate cover text.
-The model used is Llama-3.1-8B-Instruct (open source).
-Open-source models can occasionally make mistakes or produce repetitive text.</span>
+            <span class="info-tip">Whatever you type here is paraphrased by Agent A into a longer, natural-sounding message — that cover text secretly carries your chess move.
+Model: Llama-3.1-8B-Instruct (open source), which can occasionally make mistakes or produce repetitive text.</span>
           </span>
         </div>
         <textarea id="prompt-input" rows="2"
-          placeholder="Type a conversation prompt…" disabled></textarea>
+          placeholder="Type a message — Agent A will paraphrase it…" disabled></textarea>
         <button id="send" disabled>Send</button>
       </div>
     </div>
@@ -517,7 +516,7 @@ function handleMsg(d){
           en.textContent=`✓ M=${curLegalCount} legal moves · received correctly — ${expClean}`;
         } else {
           en.classList.add('bad');
-          en.textContent=`✗ Decode mismatch — AI decoded ${decClean}, you played ${expClean}. Boards may be misaligned.`;
+          en.textContent=`✗ Decode mismatch — Agent B decoded ${decClean}, but you played ${expClean}. In a real two-agent setup this would desync their boards; this demo shares one board and played your real move, so the game continues normally.`;
         }
         bf.appendChild(en);curABub.appendChild(bf);
         const tw=mkBwrap('b','AGENT B');tw.id='__typing__';

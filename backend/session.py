@@ -131,7 +131,7 @@ class DemoSession:
                 msg["belief"] = belief
             await send(msg)
 
-        text_1 = "".join(text_1_buf).strip()
+        text_1 = _strip_wrapping_quotes("".join(text_1_buf).strip())
         await send({"type": "turn_done", "agent": "llm1", "text": text_1})
 
         # 4. Recover decoded move
@@ -257,8 +257,9 @@ class DemoSession:
                 "Rewrite the following message as a longer, natural-sounding "
                 "message that expresses the SAME intent, as if you were saying "
                 "it to a friend. Do NOT answer or respond to it — only rephrase "
-                "and expand it. Output only the rewritten message, nothing else.\n\n"
-                f'Message: "{new_user_msg}"'
+                "and expand it. Output only the rewritten message as plain text, "
+                "with no surrounding quotation marks and no preamble.\n\n"
+                f"Message to rewrite: {new_user_msg}"
             )
             messages.append({"role": "user", "content": user_content})
         else:
@@ -312,6 +313,22 @@ class DemoSession:
 
 
 # ── module-level helpers ─────────────────────────────────────────────────
+
+def _strip_wrapping_quotes(text: str) -> str:
+    """Remove a single pair of quotation marks wrapping the whole message.
+
+    The relay wrapper occasionally makes the model echo its input in quotes.
+    Only strips when the same quote char opens and closes the entire string,
+    so internal quotes and one-sided quotes are left untouched.
+    """
+    t = text.strip()
+    if len(t) >= 2 and t[0] == t[-1] and t[0] in ('"', "'", "“", "”", "‘", "’"):
+        return t[1:-1].strip()
+    # Handle curly-quote pairs where open != close
+    if len(t) >= 2 and t[0] in ('“', '‘') and t[-1] in ('”', '’'):
+        return t[1:-1].strip()
+    return t
+
 
 def _force_reset(enc: CovertEncoder) -> None:
     enc.tracker      = None
