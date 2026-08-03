@@ -6,9 +6,9 @@ Run (from backend/ directory):
 workers MUST be 1: the shared model lives in a single process.
 """
 from __future__ import annotations
+import asyncio
 import os
 from pathlib import Path
-import asyncio
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
