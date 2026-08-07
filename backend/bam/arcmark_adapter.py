@@ -94,10 +94,13 @@ class ArcMarkAdapter:
             0, self.cfg.p_field, size=(self.cfg.k_bits, self.cfg.n_tokens), dtype=np.int64
         )
         # V_t (the shared nonce) is now derived on demand via _nonce(t) so it is
-        # defined for arbitrarily large t (variable-length embedding). We keep
-        # drawing phi from the same rng stream afterward so existing seeds still
-        # reproduce the same phase. The old fixed-size self.V array is gone.
-        self.phi = float(rng.uniform(0.0, 2 * math.pi))
+        # defined for arbitrarily large t (variable-length embedding). The old
+        # fixed-size self.V array is gone.
+        # phi=0 matches the reference implementation (compare.py PHI=0.0). The
+        # symbol targets and antipodal ACK/NACK angles in bam_tracker are all
+        # computed relative to phi, so encoder and decoder stay consistent for
+        # any phi; we pin it to 0 to match the reference exactly.
+        self.phi = 0.0
         self._perm_cache: dict[int, np.ndarray] = {}
         self._nonce_cache: dict[int, int] = {}
 

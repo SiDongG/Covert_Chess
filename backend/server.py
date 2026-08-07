@@ -72,17 +72,22 @@ async def ws_endpoint(websocket: WebSocket, session_id: str) -> None:
             lm2=pool.make_backend(),
             stockfish_path=STOCKFISH_PATH,
             gen_lock=gen_lock,
+            # Values match the reference implementation (compare.py):
+            #   EPS_NOISE=EPS_CONF=0.4, GAMMA=0.5, RHO_NACK=0.75,
+            #   rho_ACK auto-derives to 1-1/M (rho_ack=None), P_FIELD=4,
+            #   R_RESOLUTION=4, PHI=0.
             bam_cfg=BAMConfig(
-                eps_noise_comm=0.5,
-                eps_noise_conf=0.3,
-                gamma_1=0.85,
-                rho_ack=0.95, rho_nack=0.95,
+                eps_noise_comm=0.4,
+                eps_noise_conf=0.4,
+                gamma_1=0.5,
+                rho_ack=None,      # auto = 1 - 1/M per message (reference ra=1-1/L)
+                rho_nack=0.75,
                 p_field=4,
             ),
             adapter_cfg=ArcMarkConfig(
-                p_field=4, r_resolution=8,
+                p_field=4, r_resolution=4,
                 shared_seed=0xA12C, top_k=50,
-                sinkhorn_max_iter=1000,
+                sinkhorn_max_iter=4000,
                 sinkhorn_stop_thr=1e-4,
                 sinkhorn_reg=0.2,
                 sinkhorn_method="sinkhorn_log",

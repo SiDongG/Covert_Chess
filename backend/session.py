@@ -190,21 +190,33 @@ class DemoSession:
         _force_reset(self.encoder_2)
         self.encoder_2.queue_message(m_star, M_star)
 
-        # 8. Stream LLM_2's watermarked reply
+        # 8. Stream LLM_2's watermarked reply.
+        # If embedding raises (e.g. a Sinkhorn/numeric edge case), we must NOT
+        # lose the turn: the engine move is already chosen and the user's move
+        # already applied. Catch, fall back to plain text, and ALWAYS proceed to
+        # board_update so the client commits the board and unlocks (busy=false).
         prompt_2    = self._build_prompt(self.lm2, self.history_2, text_1, self.prompt_b)
         prompt_ids2 = self.lm2.encode_tensor(prompt_2)
         text_2_buf: list[str] = []
+        try:
+            async for _, tok_str, _ in self._stream(
+                lm=self.lm2,
+                enc_tracker=self.encoder_2.tracker,
+                dec_tracker=None,
+                m_true=m_star, prompt_ids=prompt_ids2,
+            ):
+                text_2_buf.append(tok_str)
+                await send({"type": "token", "agent": "llm2", "text": tok_str})
+            text_2 = "".join(text_2_buf).strip()
+        except Exception as exc:
+            # Embedding failed mid-reply. Keep whatever streamed so far, note it,
+            # and continue the game rather than dropping the session.
+            _force_reset(self.encoder_2)
+            text_2 = ("".join(text_2_buf).strip()
+                      or "(reply could not be generated this turn)")
+            await send({"type": "status",
+                        "msg": f"Agent B embedding fell back to plain text ({exc})."})
 
-        async for _, tok_str, _ in self._stream(
-            lm=self.lm2,
-            enc_tracker=self.encoder_2.tracker,
-            dec_tracker=None,
-            m_true=m_star, prompt_ids=prompt_ids2,
-        ):
-            text_2_buf.append(tok_str)
-            await send({"type": "token", "agent": "llm2", "text": tok_str})
-
-        text_2 = "".join(text_2_buf).strip()
         await send({"type": "turn_done", "agent": "llm2", "text": text_2})
 
         # 9. Apply engine move; send board update (client applies on Decode click)

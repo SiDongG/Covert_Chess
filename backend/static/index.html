@@ -354,18 +354,8 @@ Model: Llama-3.1-8B-Instruct (open source), which can occasionally make mistakes
 // Update this line whenever you get a new pod.
 const BACKEND_URL = 'wss://7cwkj0tq9l2283-8000.proxy.runpod.net';
 
-// Session ID: stable within a browser tab (survives refresh), new for each new tab.
-// This means refreshing doesn't consume a new session slot, and a reconnect
-// resumes the same server-side session (preserving the game board).
-const SESSION_ID = sessionStorage.getItem('bam-sid') ||
-                   ('bam-' + Math.random().toString(36).slice(2,9));
-sessionStorage.setItem('bam-sid', SESSION_ID);
-
 function getWsUrl(manualUrl) {
-  // Use the tab-stable SESSION_ID (not a fresh random id) so that a
-  // reconnect resumes the SAME server-side session — the server keys
-  // sessions by this id and preserves the game board across reconnects.
-  const sid = SESSION_ID;
+  const sid = 'bam-' + Math.random().toString(36).slice(2,9);
   const p   = new URLSearchParams(location.search);
 
   // Priority 1: manually entered in connect panel
@@ -385,11 +375,12 @@ function getWsUrl(manualUrl) {
   return null;
 }
 
-
+// Session ID: stable within a browser tab (survives refresh), new for each new tab.
+// This means refreshing doesn't consume a new session slot.
+const SESSION_ID = sessionStorage.getItem('bam-sid') ||
+                   ('bam-' + Math.random().toString(36).slice(2,9));
+sessionStorage.setItem('bam-sid', SESSION_ID);
 let game=new Chess(), board=null, ws=null;
-// reconnect state
-let reconnectAttempts=0, reconnectTimer=null, kaTimer=null, manualDisconnect=false;
-let lastManualUrl=null;
 let pendingSan=null, pendingUci=null, pendingFrom=null, pendingTo=null;
 let busy=false;
 let curExDiv=null, curABub=null, curBBub=null;
@@ -459,12 +450,16 @@ document.getElementById('prompt-input').addEventListener('keydown',e=>{
 });
 
 // ── send ──────────────────────────────────────────────────────────────
+let preMoveFen=null;
 function doSend(){
   if(busy||!pendingSan||!ws||ws.readyState!==WebSocket.OPEN)return;
   busy=true;updateSend();
   const prompt=document.getElementById('prompt-input').value.trim();
   curMoveSan=pendingSan;curFromSq=pendingFrom;curToSq=pendingTo;
   curLegalCount=game.moves().length;
+  // Snapshot the position BEFORE the optimistic pending move, so we can
+  // restore it if the turn errors server-side (prevents a stuck half-move).
+  { const tmp=new Chess(game.fen()); tmp.undo(); preMoveFen=tmp.fen(); }
   document.getElementById('prompt-input').value='';
   hideBadge();
   curExDiv=document.createElement('div');curExDiv.className='exchange';
@@ -482,26 +477,10 @@ function doSend(){
 // ── websocket message handler ─────────────────────────────────────────
 function handleMsg(d){
   switch(d.type){
-    case 'pong': break;   // heartbeat ack — nothing to do
     case 'ready':
       document.getElementById('connect-panel').classList.remove('show');
-      setConn(true);
-      clearTimeout(reconnectTimer);
-      reconnectAttempts = 0;
-      if (!window.__bamConnectedOnce) {
-        // First connection of this tab: initialise the transcript.
-        window.__bamConnectedOnce = true;
-        status('Ready — drag a piece to start');
-        clearMsgs();
-        addSys('Make a move, type a prompt, click Send.\nClick Decode on the AI\'s reply to reveal the hidden chess move.');
-      } else {
-        // Silent reconnect: keep the existing transcript & board.
-        // Sync the board to the server's authoritative position in case a
-        // move landed just before the drop.
-        if (d.fen) { try { game.load(d.fen); board.position(d.fen, false);
-                           updateMovelist(); updatePlayerRows(); } catch(e){} }
-        status('Reconnected — your turn');
-      }
+      setConn(true);status('Ready — drag a piece to start');
+      clearMsgs();addSys('Make a move, type a prompt, click Send.\nClick Decode on the AI\'s reply to reveal the hidden chess move.');
       updateSend();break;
     case 'status': status(d.msg);break;
     case 'token':
@@ -566,6 +545,7 @@ function handleMsg(d){
       }
       updateMovelist(); updatePlayerRows();
       storedEngineMove=storedEngineSan=null;
+      preMoveFen=null;
       // Now unlock the next turn
       busy=false; updateSend();
       status('Your turn — drag a piece to continue');
@@ -601,7 +581,17 @@ function handleMsg(d){
       break;
     case 'difficulty_ok': status(`Engine: ${document.getElementById('difficulty-select').options[document.getElementById('difficulty-select').selectedIndex].text}`);break;
     case 'error':
-      addSys(`Error: ${d.msg}`);busy=false;updateSend();break;
+      addSys(`Error: ${d.msg}`);
+      // If the turn failed before the server committed a board_update, the
+      // optimistic move is still on the client board. Roll it back so the
+      // board matches the server and the user can retry cleanly.
+      if(preMoveFen){
+        try{ game.load(preMoveFen); board.position(preMoveFen,false);
+             clearHL(); updateMovelist(); updatePlayerRows(); }catch(e){}
+        preMoveFen=null;
+      }
+      storedEngineMove=storedEngineSan=null;
+      busy=false;updateSend();break;
   }
 }
 
@@ -715,64 +705,24 @@ document.getElementById('difficulty-select').addEventListener('change', function
 });
 
 // ── websocket connection ──────────────────────────────────────────────
-const MAX_RECONNECT = 4;      // silent attempts before showing the panel
-const KEEPALIVE_MS  = 25000;  // ping interval, under the proxy idle window
-
-function startKeepalive(){
-  clearInterval(kaTimer);
-  kaTimer = setInterval(() => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      try { ws.send(JSON.stringify({type:'ping'})); } catch(e){}
-    }
-  }, KEEPALIVE_MS);
-}
-
-function scheduleReconnect(){
-  if (manualDisconnect) return;
-  if (reconnectAttempts >= MAX_RECONNECT) {
-    // Give up quietly and let the user act.
-    status('Disconnected — reconnect below');
-    document.getElementById('connect-panel').classList.add('show');
-    return;
-  }
-  reconnectAttempts += 1;
-  const delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), 8000); // 1,2,4,8s
-  status(`Reconnecting… (attempt ${reconnectAttempts}/${MAX_RECONNECT})`);
-  clearTimeout(reconnectTimer);
-  reconnectTimer = setTimeout(() => connect(lastManualUrl, true), delay);
-}
-
-function connect(manualUrl, isRetry) {
-  lastManualUrl = manualUrl || lastManualUrl;
-  manualDisconnect = false;
-  const url = getWsUrl(lastManualUrl);
+function connect(manualUrl) {
+  const url = getWsUrl(manualUrl);
   if (!url) {
     document.getElementById('connect-panel').classList.add('show');
     return;
   }
-  // A fresh, user-initiated connect resets the retry counter.
-  if (!isRetry) reconnectAttempts = 0;
-  // Hide connect panel while we attempt to (re)connect.
+  // Hide connect panel if it was showing
   document.getElementById('connect-panel').classList.remove('show');
 
   ws = new WebSocket(url);
-  ws.onopen = () => {
-    reconnectAttempts = 0;
-    clearTimeout(reconnectTimer);
-    status('Connected — loading model…');
-    setConn(true);
-    startKeepalive();
-  };
-  ws.onclose = () => {
-    clearInterval(kaTimer);
-    setConn(false);
+  ws.onopen    = () => { status('Connected — loading model…'); setConn(true); };
+  ws.onclose   = () => {
+    setConn(false); status('Disconnected');
     busy = false; updateSend();
-    // Don't dump the user back to the connect panel on the first drop —
-    // the URL is still valid. Try to resume the same session silently;
-    // the panel appears only after MAX_RECONNECT failed attempts.
-    scheduleReconnect();
+    // Show connect panel again so user can reconnect
+    document.getElementById('connect-panel').classList.add('show');
   };
-  ws.onerror = () => { setConn(false); status('Connection error'); };
+  ws.onerror   = () => { setConn(false); status('Connection error'); };
   ws.onmessage = ev => handleMsg(JSON.parse(ev.data));
 }
 

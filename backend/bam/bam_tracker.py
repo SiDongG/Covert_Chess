@@ -19,14 +19,17 @@ EVT_DONE          = "done"
 @dataclass
 class BAMConfig:
     # Mixture-likelihood contamination probabilities (in [0, 1)).
-    # eps_noise_comm: used during the communication phase posterior update.
-    # eps_noise_conf: used during the Yamamoto-Itoh confirmation phase.
-    # Different values allow tighter confidence during confirmation.
-    eps_noise_comm: float = 0.5
-    eps_noise_conf: float = 0.3
-    gamma_1: float = 0.85   # COMM → CONF threshold
-    rho_ack: float = 0.95   # CONF accept  threshold
-    rho_nack: float = 0.95  # CONF reject  threshold
+    # Values match the reference implementation (compare.py): EPS_NOISE=0.4
+    # for the communication-phase Laplace floor, EPS_CONF=0.4 for the
+    # confirmation-phase antipodal floor.
+    eps_noise_comm: float = 0.4   # EPS_NOISE  (comm Laplace floor)
+    eps_noise_conf: float = 0.4   # EPS_CONF   (conf antipodal floor)
+    gamma_1: float = 0.5    # GAMMA — COMM → CONF threshold (g1)
+    # rho_ACK: reference uses ra = 1 - 1/L where L is the message-alphabet size.
+    # Here L = M (legal moves). Leave as None to auto-derive 1 - 1/M per message;
+    # set an explicit float to override.
+    rho_ack: Optional[float] = None
+    rho_nack: float = 0.75  # RHO_NACK
     p_field: int = 4        # channel alphabet size |U|
 
 
@@ -63,10 +66,28 @@ class BAMTracker:
         self.pi = np.ones(self.M) / self.M
         self.knockdown = np.ones(self.M)
         self.rng = np.random.default_rng()
-        # signal width = angular noise of an informative token; normaliser
-        # for the (non-wrapped) Gaussian, matching compare_chat.py exactly.
-        self._sigma = math.pi / self.cfg.p_field
-        self._z_signal = math.sqrt(2.0 * math.pi) * self._sigma
+        # LAPLACE signal kernel, matching compare.py exactly:
+        #   sigma = pi / P_SYM ;  b = sigma / sqrt(2)
+        #   Z_signal = 2 b (1 - exp(-pi / b))
+        # (The previous code used a Gaussian kernel, which does not match the
+        #  reference and shifts every posterior update.)
+        p = self.cfg.p_field
+        self._sigma = math.pi / p
+        self._b_laplace = self._sigma / math.sqrt(2.0)
+        self._z_signal = 2.0 * self._b_laplace * (1.0 - math.exp(-math.pi / self._b_laplace))
+        # Confirmation phase: genuine 2-symbol ANTIPODAL channel.
+        #   ACK  -> symbol 0     (angle phi)
+        #   NACK -> symbol p//2  (angle phi + pi, antipodal)
+        # reuse the comm Laplace scale, own normaliser, own floor (eps_noise_conf).
+        self._sym_ack  = 0
+        self._sym_nack = p // 2
+        self._angle_ack  = (2 * math.pi * self._sym_ack  / p + self.phi) % (2 * math.pi)
+        self._angle_nack = (2 * math.pi * self._sym_nack / p + self.phi) % (2 * math.pi)
+        self._b_conf = self._b_laplace
+        self._z_conf = 2.0 * self._b_conf * (1.0 - math.exp(-math.pi / self._b_conf))
+        # rho_ACK: auto-derive 1 - 1/M when not explicitly set (reference ra=1-1/L).
+        self._rho_ack = (self.cfg.rho_ack if self.cfg.rho_ack is not None
+                         else (1.0 - 1.0 / self.M))
 
     # ---- internal: belief update from one observation ------------------
     def _per_symbol_likelihood(self, angle_obs: float) -> np.ndarray:
@@ -90,21 +111,36 @@ class BAMTracker:
         and public constants. No distribution / model access.
         """
         p   = self.cfg.p_field
-        eps = (self.cfg.eps_noise_comm if self.phase == "COMM"
-               else self.cfg.eps_noise_conf)
+        eps = self.cfg.eps_noise_comm   # COMM-phase floor (Laplace)
         signal = np.empty(p)
         for u in range(p):
             target = (2 * math.pi * u / p + self.phi) % (2 * math.pi)
             d = abs(angle_obs - target) % (2 * math.pi)
             d = min(d, 2 * math.pi - d)
-            signal[u] = math.exp(-0.5 * (d / self._sigma) ** 2) / self._z_signal
+            signal[u] = math.exp(-d / self._b_laplace) / self._z_signal
         ells = (1.0 - eps) * signal + eps / (2.0 * math.pi)
-        if self.phase == "CONF":
-            print(f"   [dec conf t={self.t}] obs_angle={angle_obs:.3f}  "
-                f"phi={self.phi:.3f}  "
-                f"targets={[f'{(2*math.pi*u/p + self.phi) % (2*math.pi):.3f}' for u in range(p)]}  "
-                f"ells={[f'{e:.3f}' for e in ells]}")
         return ells
+
+    def _conf_two_symbol_likelihood(self, angle_obs: float) -> np.ndarray:
+        """Clean 2-hypothesis likelihood over the antipodal pair {ACK, NACK}.
+
+        Matches compare.py::conf_two_symbol_likelihood — Laplace signal toward
+        each of the TWO antipodal targets only (symbols 0 and p//2), mixed with
+        the confirmation floor eps_noise_conf. This is the genuine confirmation
+        channel; the old code reused the 4-symbol comm likelihood over a 2-vector,
+        which is NOT the antipodal channel and inflated confirmation errors.
+        """
+        def circ(a, b):
+            d = abs(a - b) % (2 * math.pi)
+            return min(d, 2 * math.pi - d)
+        d_ack  = circ(angle_obs, self._angle_ack)
+        d_nack = circ(angle_obs, self._angle_nack)
+        eps = self.cfg.eps_noise_conf
+        sig_ack  = math.exp(-d_ack  / self._b_conf) / self._z_conf
+        sig_nack = math.exp(-d_nack / self._b_conf) / self._z_conf
+        ell_ack  = (1.0 - eps) * sig_ack  + eps / (2.0 * math.pi)
+        ell_nack = (1.0 - eps) * sig_nack + eps / (2.0 * math.pi)
+        return np.array([ell_ack, ell_nack])
 
     def _message_likelihood(self, ells: np.ndarray, belief: np.ndarray) -> np.ndarray:
         p = self.cfg.p_field
@@ -137,16 +173,13 @@ class BAMTracker:
     # ---- encoder step: produce one token ------------------------------
     def step_encoder(self, p_x, m_true):
         u = self._compute_codeword_symbol(m_true)
-        print(f"   [enc step] t={self.t} t_offset={self.t_offset} phase={self.phase} u={u}")
         q = self.coupled_dist(p_x, self.t_offset + self.t, u)
         tok = self.sample_from(q)
-        print(f"   [enc step] t={self.t} sampled tok={tok}")
         self._consume_token(tok)
         return tok
 
     # ---- decoder step: consume an observed token ----------------------
     def step_decoder(self, token_id):
-        print(f"   [dec step] t={self.t} t_offset={self.t_offset} phase={self.phase} received tok={token_id}")
         self._consume_token(token_id)
 
     # ---- shared belief-update logic -----------------------------------
@@ -155,18 +188,20 @@ class BAMTracker:
         if self.phase == "COMM":
             eff = self.effective_pi()
             return self._posterior_match_symbol(eff, m_true)
-        else:  # CONF
+        else:  # CONF — genuine antipodal channel: emit the symbol DIRECTLY by
+               # the bit (no CDF/posterior-match over the 2-belief). This matches
+               # compare.py::run_confirmation (tx_symbol = SYM_ACK|SYM_NACK).
             true_bit = 0 if self.candidate == m_true else 1
-            return self._posterior_match_symbol(self.rho, true_bit)
+            return self._sym_ack if true_bit == 0 else self._sym_nack
 
     def _consume_token(self, token_id: int) -> None:
         if self.done:
             return
         angle_obs = self.angle_of_token(token_id, self.t_offset + self.t)
-        ells = self._per_symbol_likelihood(angle_obs)
         self.t += 1
 
         if self.phase == "COMM":
+            ells = self._per_symbol_likelihood(angle_obs)
             q = self._message_likelihood(ells, self.pi)
             self.pi = self.pi * q
             s = self.pi.sum()
@@ -184,14 +219,14 @@ class BAMTracker:
                 self.rho = np.array([0.5, 0.5])
                 self._emit(EVT_GAMMA1_CROSS,
                            {"candidate": self.candidate, "pi": float(eff.max())})
-        else:  # CONF
-            q = self._message_likelihood(ells, self.rho)
-            self.rho = self.rho * q
+        else:  # CONF — clean 2-symbol antipodal likelihood on rho=[P(ACK),P(NACK)]
+            ell = self._conf_two_symbol_likelihood(angle_obs)
+            self.rho = self.rho * ell
             self.rho = self.rho / self.rho.sum()
             self.n_conf += 1
             self._emit(EVT_CONF_UPDATE, {"rho_ack": float(self.rho[0]),
                                          "rho_nack": float(self.rho[1])})
-            if self.rho[0] >= self.cfg.rho_ack:
+            if self.rho[0] >= self._rho_ack:
                 self.decoded = self.candidate
                 self.done = True
                 self._emit(EVT_ACK, {"m": self.decoded})
