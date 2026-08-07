@@ -93,9 +93,13 @@ class ArcMarkAdapter:
         self.G = rng.integers(
             0, self.cfg.p_field, size=(self.cfg.k_bits, self.cfg.n_tokens), dtype=np.int64
         )
-        self.V = rng.integers(0, self.cfg.r_resolution, size=self.cfg.n_tokens, dtype=np.int64)
+        # V_t (the shared nonce) is now derived on demand via _nonce(t) so it is
+        # defined for arbitrarily large t (variable-length embedding). We keep
+        # drawing phi from the same rng stream afterward so existing seeds still
+        # reproduce the same phase. The old fixed-size self.V array is gone.
         self.phi = float(rng.uniform(0.0, 2 * math.pi))
         self._perm_cache: dict[int, np.ndarray] = {}
+        self._nonce_cache: dict[int, int] = {}
 
     def _permutation(self, t: int) -> np.ndarray:
         if t not in self._perm_cache:
@@ -109,6 +113,28 @@ class ArcMarkAdapter:
 
     def _permutation_torch(self, t: int) -> torch.Tensor:
         return torch.from_numpy(self._permutation(t).astype(np.int64))
+
+    def _nonce(self, t: int) -> int:
+        """Shared-secret nonce V_t for step t, defined for ALL t >= 0.
+
+        BAM embedding is variable-length: the tracker consumes as many tokens
+        as confirmation needs, so t can exceed cfg.n_tokens. The old design
+        precomputed a fixed-size V array of length n_tokens and indexed V[t],
+        which raised IndexError once a message ran past n_tokens tokens
+        (the 'index 64 out of bounds' crash). We instead derive V_t on demand
+        by hashing (seed, t) — the same reproducible, unbounded construction
+        already used for the per-step permutation, so encoder and decoder stay
+        in lock-step for any t. For t < n_tokens this reproduces the original
+        precomputed values' role (a fresh uniform draw in [0, r_resolution)).
+        """
+        if t not in self._nonce_cache:
+            seed_bytes = hashlib.blake2b(
+                f"arcmark-nonce:{self.cfg.shared_seed}:{t}".encode(), digest_size=8
+            ).digest()
+            seed = int.from_bytes(seed_bytes, "big")
+            rng = np.random.default_rng(seed)
+            self._nonce_cache[t] = int(rng.integers(0, self.cfg.r_resolution))
+        return self._nonce_cache[t]
 
     def _arcmark_solver_config(self) -> _ArcMarkSolverConfig:
         # Keys here are independent of arcmark_adapter.ArcMarkConfig — these
@@ -138,7 +164,7 @@ class ArcMarkAdapter:
     def channel_angle(self, c_t: int, t: int) -> float:
         return (
             2 * math.pi * c_t / self.cfg.p_field
-            + 2 * math.pi * float(self.V[t]) / self.cfg.r_resolution
+            + 2 * math.pi * float(self._nonce(t)) / self.cfg.r_resolution
             + self.phi
         ) % (2 * math.pi)
 
@@ -150,7 +176,7 @@ class ArcMarkAdapter:
     def _solve_ot_coupling(self, p_xt: np.ndarray, t: int, c_t: int) -> np.ndarray:
         probs = torch.from_numpy(np.ascontiguousarray(p_xt)).to(torch.float64)
         perm_t = self._permutation_torch(t)
-        s_index = int(self.V[t])
+        s_index = int(self._nonce(t))
 
         try:
             ot_result = solve_arcmark_ot(
@@ -201,7 +227,7 @@ class ArcMarkAdapter:
         perm = self._permutation(t)
         return (
             2 * math.pi * float(perm[token_id]) / self.lm.vocab_size
-            - 2 * math.pi * float(self.V[t]) / self.cfg.r_resolution
+            - 2 * math.pi * float(self._nonce(t)) / self.cfg.r_resolution
         ) % (2 * math.pi)
 
     def _codebook(self) -> torch.Tensor:
