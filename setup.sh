@@ -12,7 +12,7 @@ mv stockfish/stockfish-ubuntu-x86-64 /usr/local/bin/stockfish
 chmod +x /usr/local/bin/stockfish
 
 ## 2. Clone repo and install deps
-git clone https://github.com/SiDongG/Covert_Chess.git
+git clone https://github.com/infotheorylab/Covert_Chess.git
 cd /Covert_Chess/backend
 pip install -r requirements.txt
 
